@@ -7,14 +7,6 @@ using System.Threading.Tasks;
 
 namespace PathsSynchronizer.Core.Checksum
 {
-    public class XXHashPathChecksumTable : DirectoryChecksumTable<ulong>
-    {
-        public XXHashPathChecksumTable(string directoryPath, FileChecksumMode mode, IDictionary<string, ulong> table)
-            : base(directoryPath, mode, table)
-        {
-        }
-    }
-
     public class DirectoryChecksumTable<TChecksum>
     {
         private IDictionary<string, TChecksum> _checksumTable;
