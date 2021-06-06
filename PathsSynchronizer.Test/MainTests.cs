@@ -12,11 +12,12 @@ namespace PathsSynchronizer.Test
         [TestMethod]
         public async Task TestDirectoryChecksumTableBuilderAsync()
         {
-            await 
+            DirectoryChecksumTable<ulong> table =
+            await
                 XXHashChecksumTableBuilder
                 .CreateNew
                 (
-                    @"E:\Ema\DEKSTOP EMA",
+                    @"C:\Temp\Consul",
                     FileChecksumMode.FileHash,
                     stream =>
                     {
