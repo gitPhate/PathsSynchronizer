@@ -1,7 +1,5 @@
-using HashDepot;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PathsSynchronizer.Core.Checksum;
-using PathsSynchronizer.Core.Checksum.XXHash;
 using System.Threading.Tasks;
 
 namespace PathsSynchronizer.Test
@@ -12,21 +10,18 @@ namespace PathsSynchronizer.Test
         [TestMethod]
         public async Task TestDirectoryChecksumTableBuilderAsync()
         {
-            DirectoryChecksumTable<ulong> table =
-            await
-                XXHashChecksumTableBuilder
-                .CreateNew
-                (
-                    @"C:\Temp\Consul",
-                    FileChecksumMode.FileHash,
-                    stream =>
-                    {
-                        ulong hash = XXHash.Hash64(stream);
-                        return Task.FromResult(hash);
-                    }
-                )
-                .BuildAsync(0)
-                .ConfigureAwait(false);
+            DirectoryChecksumTable table =
+                await
+                    DirectoryChecksumTableBuilder
+                    .CreateNew
+                    (
+                        @"C:\Temp\Consul",
+                        FileChecksumMode.FileHash
+                    )
+                    .BuildAsync(0)
+                    .ConfigureAwait(false);
+
+            Assert.IsTrue(true);
         }
     }
 }

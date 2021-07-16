@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace PathsSynchronizer.Core.Checksum
 {
-    public class DirectoryChecksumTable<TChecksum>
+    public class DirectoryChecksumTable
     {
-        private readonly IDictionary<string, TChecksum> _checksumTable;
+        private readonly IDictionary<string, ulong> _checksumTable;
         public string DirectoryPath { get; }
         public FileChecksumMode Mode { get; }
 
-        public DirectoryChecksumTable(string directoryPath, FileChecksumMode mode, IDictionary<string, TChecksum> table)
+        public DirectoryChecksumTable(string directoryPath, FileChecksumMode mode, IDictionary<string, ulong> table)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
             {
@@ -27,12 +27,12 @@ namespace PathsSynchronizer.Core.Checksum
 
             DirectoryPath = directoryPath;
             Mode = mode;
-            _checksumTable = table ?? new Dictionary<string, TChecksum>();
+            _checksumTable = table ?? new Dictionary<string, ulong>();
         }
 
         public async Task<byte[]> SerializeAsync()
         {
-            DirectoryChecksumTableData<TChecksum> toSerializeObj =
+            DirectoryChecksumTableData<ulong> toSerializeObj =
                 new()
                 {
                     Mode = Mode,
@@ -44,11 +44,11 @@ namespace PathsSynchronizer.Core.Checksum
             return await GZipHelper.CompressStringAsync(json).ConfigureAwait(false);
         }
 
-        public static async Task<DirectoryChecksumTable<TChecksum>> FromSerialized(byte[] bytes)
+        public static async Task<DirectoryChecksumTable> FromSerialized(byte[] bytes)
         {
             string json = await GZipHelper.DecompressStringAsync(bytes).ConfigureAwait(false);
-            DirectoryChecksumTableData<TChecksum> data = JsonConvert.DeserializeObject<DirectoryChecksumTableData<TChecksum>>(json);
-            return new DirectoryChecksumTable<TChecksum>(data.DirectoryPath, data.Mode, data.ChecksumTable);
+            DirectoryChecksumTableData<ulong> data = JsonConvert.DeserializeObject<DirectoryChecksumTableData<ulong>>(json);
+            return new DirectoryChecksumTable(data.DirectoryPath, data.Mode, data.ChecksumTable);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HashDepot;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -6,19 +7,17 @@ using System.Threading.Tasks;
 
 namespace PathsSynchronizer.Core.Checksum
 {
-    public class DirectoryChecksumTableBuilder<TChecksum>
+    public class DirectoryChecksumTableBuilder
     {
-        private readonly Func<Stream, Task<TChecksum>> _hashFunction;
-
         public string DirectoryPath { get; }
         public FileChecksumMode Mode { get; }
 
-        public static DirectoryChecksumTableBuilder<TChecksum> CreateNew(string directoryPath, FileChecksumMode mode, Func<Stream, Task<TChecksum>> hashFunction)
+        public static DirectoryChecksumTableBuilder CreateNew(string directoryPath, FileChecksumMode mode)
         {
-            return new DirectoryChecksumTableBuilder<TChecksum>(directoryPath, mode, hashFunction);
+            return new DirectoryChecksumTableBuilder(directoryPath, mode);
         }
 
-        protected DirectoryChecksumTableBuilder(string directoryPath, FileChecksumMode mode, Func<Stream, Task<TChecksum>> hashFunction)
+        protected DirectoryChecksumTableBuilder(string directoryPath, FileChecksumMode mode)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
             {
@@ -30,27 +29,26 @@ namespace PathsSynchronizer.Core.Checksum
                 throw new DirectoryNotFoundException($"The path {directoryPath} has not been found");
             }
 
-            _hashFunction = hashFunction;
-
             DirectoryPath = directoryPath;
             Mode = mode;
         }
 
-        public async Task<DirectoryChecksumTable<TChecksum>> BuildAsync(int maxParallelOperations)
+        public async Task<DirectoryChecksumTable> BuildAsync(int maxParallelOperations)
         {
-            IDictionary<string, TChecksum> dataDict = new Dictionary<string, TChecksum>();
+            IDictionary<string, ulong> dataDict = new Dictionary<string, ulong>();
             var dirHandle = Directory.EnumerateFiles(DirectoryPath, "*", SearchOption.AllDirectories);
 
             foreach (string file in dirHandle)
             {
-                TChecksum checksum = await CalculateFileChecksumAsync(file).ConfigureAwait(false);
+                ulong checksum = CalculateFileChecksum(file);
                 dataDict.Add(file, checksum);
             }
 
-            return new DirectoryChecksumTable<TChecksum>(DirectoryPath, Mode, dataDict);
+            var table = new DirectoryChecksumTable(DirectoryPath, Mode, dataDict);
+            return await Task.FromResult(table).ConfigureAwait(false);
         }
 
-        private async Task<TChecksum> CalculateFileChecksumAsync(string filePath)
+        private ulong CalculateFileChecksum(string filePath)
         {
             Stream hashFxInputStream = null;
             try
@@ -66,7 +64,7 @@ namespace PathsSynchronizer.Core.Checksum
                         break;
                 }
 
-                TChecksum checksum = await _hashFunction(hashFxInputStream).ConfigureAwait(false);
+                ulong checksum = XXHash.Hash64(hashFxInputStream);
                 return checksum;
             }
             finally
