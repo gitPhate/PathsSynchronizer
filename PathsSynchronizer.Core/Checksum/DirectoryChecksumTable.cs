@@ -9,7 +9,7 @@ namespace PathsSynchronizer.Core.Checksum
 {
     public class DirectoryChecksumTable<TChecksum>
     {
-        private IDictionary<string, TChecksum> _checksumTable;
+        private readonly IDictionary<string, TChecksum> _checksumTable;
         public string DirectoryPath { get; }
         public FileChecksumMode Mode { get; }
 
@@ -33,7 +33,7 @@ namespace PathsSynchronizer.Core.Checksum
         public async Task<byte[]> SerializeAsync()
         {
             DirectoryChecksumTableData<TChecksum> toSerializeObj =
-                new DirectoryChecksumTableData<TChecksum>
+                new()
                 {
                     Mode = Mode,
                     ChecksumTable = _checksumTable,

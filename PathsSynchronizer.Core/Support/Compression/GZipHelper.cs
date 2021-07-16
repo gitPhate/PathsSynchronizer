@@ -20,9 +20,9 @@ namespace PathsSynchronizer.Core.Support.Compression
 
         public static async Task<MemoryStream> DecompressAsync(Stream inputStream)
         {
-            MemoryStream resultStream = new MemoryStream();
+            MemoryStream resultStream = new();
 
-            using (GZipStream gzipStream = new GZipStream(inputStream, CompressionMode.Decompress))
+            using (GZipStream gzipStream = new(inputStream, CompressionMode.Decompress))
             {
                 await gzipStream.CopyToAsync(resultStream).ConfigureAwait(false);
             }
@@ -32,25 +32,21 @@ namespace PathsSynchronizer.Core.Support.Compression
 
         public static async Task<byte[]> CompressStringAsync(string s, Encoding encoding = null)
         {
-            encoding = encoding ?? Encoding.UTF8;
+            encoding ??= Encoding.UTF8;
             byte[] stringBytes = encoding.GetBytes(s);
-            using (MemoryStream stringStream = new MemoryStream(stringBytes))
-            using (MemoryStream resultStream = await CompressAsync(stringStream).ConfigureAwait(false))
-            {
-                byte[] gzipBytes = resultStream.ToArray();
-                return gzipBytes;
-            }
+            using MemoryStream stringStream = new(stringBytes);
+            using MemoryStream resultStream = await CompressAsync(stringStream).ConfigureAwait(false);
+            byte[] gzipBytes = resultStream.ToArray();
+            return gzipBytes;
         }
 
         public static async Task<string> DecompressStringAsync(byte[] bytes, Encoding encoding = null)
         {
-            encoding = encoding ?? Encoding.UTF8;
-            using (MemoryStream inputStream = new MemoryStream(bytes))
-            using (MemoryStream resultStream = await DecompressAsync(inputStream).ConfigureAwait(false))
-            {
-                byte[] unzippedBytes = resultStream.ToArray();
-                return encoding.GetString(unzippedBytes);
-            }
+            encoding ??= Encoding.UTF8;
+            using MemoryStream inputStream = new(bytes);
+            using MemoryStream resultStream = await DecompressAsync(inputStream).ConfigureAwait(false);
+            byte[] unzippedBytes = resultStream.ToArray();
+            return encoding.GetString(unzippedBytes);
         }
     }
 }
