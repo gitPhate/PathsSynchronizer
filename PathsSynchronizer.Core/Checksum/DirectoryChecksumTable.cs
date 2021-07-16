@@ -13,6 +13,8 @@ namespace PathsSynchronizer.Core.Checksum
         public string DirectoryPath { get; }
         public FileChecksumMode Mode { get; }
 
+        public int Count => _checksumTable.Count;
+
         public DirectoryChecksumTable(string directoryPath, FileChecksumMode mode, IDictionary<string, ulong> table)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
@@ -44,7 +46,7 @@ namespace PathsSynchronizer.Core.Checksum
             return await GZipHelper.CompressStringAsync(json).ConfigureAwait(false);
         }
 
-        public static async Task<DirectoryChecksumTable> FromSerialized(byte[] bytes)
+        public static async Task<DirectoryChecksumTable> FromSerializedAsync(byte[] bytes)
         {
             string json = await GZipHelper.DecompressStringAsync(bytes).ConfigureAwait(false);
             DirectoryChecksumTableData<ulong> data = JsonConvert.DeserializeObject<DirectoryChecksumTableData<ulong>>(json);
