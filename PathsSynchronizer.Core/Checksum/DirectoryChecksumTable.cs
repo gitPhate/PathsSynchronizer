@@ -40,13 +40,15 @@ namespace PathsSynchronizer.Core.Checksum
 
         public async Task<byte[]> SerializeAsync()
         {
-            DirectoryChecksumTableData toSerializeObj =
-                new()
-                {
-                    Mode = Mode,
-                    ChecksumTable = _checksumTable,
-                    DirectoryPath = DirectoryPath
-                };
+            string dirPath = (DirectoryPath.Substring(DirectoryPath.Length - 1) == "\\") ? DirectoryPath : $"{DirectoryPath}\\";
+
+            IDictionary<string, ulong> auxDictionary = new Dictionary<string, ulong>();
+            foreach(var item in _checksumTable)
+            {
+                auxDictionary.Add(item.Key.Replace(dirPath, string.Empty), item.Value);
+            }
+
+            DirectoryChecksumTableData toSerializeObj = new(auxDictionary, DirectoryPath, Mode);
 
             string json = JsonConvert.SerializeObject(toSerializeObj);
             return await GZipHelper.CompressStringAsync(json).ConfigureAwait(false);
@@ -56,7 +58,16 @@ namespace PathsSynchronizer.Core.Checksum
         {
             string json = await GZipHelper.DecompressStringAsync(bytes).ConfigureAwait(false);
             DirectoryChecksumTableData data = JsonConvert.DeserializeObject<DirectoryChecksumTableData>(json);
-            return new DirectoryChecksumTable(data);
+
+            IDictionary<string, ulong> auxDictionary = new Dictionary<string, ulong>();
+            foreach (var item in data.ChecksumTable)
+            {
+                auxDictionary.Add(Path.Combine(data.DirectoryPath, item.Key), item.Value);
+            }
+
+            DirectoryChecksumTableData newData = new(auxDictionary, data.DirectoryPath, data.Mode);
+
+            return new DirectoryChecksumTable(newData);
         }
     }
 }
