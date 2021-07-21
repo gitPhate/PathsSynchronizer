@@ -1,6 +1,7 @@
 ﻿using HashDepot;
 using PathsSynchronizer.Core.Support.IO;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -36,8 +37,8 @@ namespace PathsSynchronizer.Core.Checksum
 
         public async Task<DirectoryChecksumTable> BuildAsync(int maxParallelOperations)
         {
-            IDictionary<string, ulong> dataDict = new Dictionary<string, ulong>();
-            var dirHandle = FastFileFinder.GetFiles(DirectoryPath, "*", true);
+            ConcurrentDictionary<string, ulong> dataDict = new();
+            IList<string> fileList = FastFileFinder.GetFiles(DirectoryPath, "*", true);
 
             Func<string, ulong> _hashFx = Mode switch
             {
@@ -46,11 +47,17 @@ namespace PathsSynchronizer.Core.Checksum
                 _ => throw new NotImplementedException()
             };
 
-            foreach (string file in dirHandle)
-            {
-                ulong checksum = _hashFx(file);
-                dataDict.Add(file, checksum);
-            }
+            Parallel
+                .ForEach
+                (
+                    fileList,
+                    new ParallelOptions { MaxDegreeOfParallelism = maxParallelOperations <= 0 ? fileList.Count : maxParallelOperations },
+                    file =>
+                    {
+                        ulong checksum = _hashFx(file);
+                        dataDict.TryAdd(file, checksum);
+                    }
+                );
 
             var table = new DirectoryChecksumTable(DirectoryPath, Mode, dataDict);
             return await Task.FromResult(table).ConfigureAwait(false);
@@ -58,16 +65,16 @@ namespace PathsSynchronizer.Core.Checksum
 
         private ulong CalculateFileChecksumUsingFileContent(string filePath)
         {
-            using Stream hashFxInputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 16 * 1024 * 1024, true);
-            ulong checksum = XXHash.Hash64(hashFxInputStream);
+            using Stream hashFxInputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096);
+            ulong checksum = XXHash.Hash32(hashFxInputStream);
             return checksum;
         }
 
         private ulong CalculateFileChecksumUsingFileName(string filePath)
         {
             byte[] filePathBytes = Encoding.UTF8.GetBytes(filePath);
-            using MemoryStream hashFxInputStream = new MemoryStream(filePathBytes);
-            ulong checksum = XXHash.Hash64(hashFxInputStream);
+            using Stream hashFxInputStream = new MemoryStream(filePathBytes);
+            ulong checksum = XXHash.Hash32(hashFxInputStream);
             return checksum;
         }
     }

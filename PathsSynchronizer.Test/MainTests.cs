@@ -32,16 +32,20 @@ namespace PathsSynchronizer.Test
         [TestMethod]
         public async Task TestDirectoryChecksumTableSerialization()
         {
+            Stopwatch sw = Stopwatch.StartNew();
             DirectoryChecksumTable table =
                 await
                     DirectoryChecksumTableBuilder
-                    .CreateNew
-                    (
-                        @"C:\development",
-                        FileChecksumMode.FileHash
-                    )
-                    .BuildAsync(0)
-                    .ConfigureAwait(false);
+                        .CreateNew
+                        (
+                            @"C:\development\dotnet\GitFashion",
+                            //@"C:\temp",
+                            FileChecksumMode.FileHash
+                        )
+                        .BuildAsync(1000)
+                        .ConfigureAwait(false);
+
+            var elapsed = sw.Elapsed;
 
             byte[] bytes = await table.SerializeAsync().ConfigureAwait(false);
             Assert.IsTrue(bytes.Any());
