@@ -3,6 +3,7 @@ using PathsSynchronizer.Core.Checksum;
 using PathsSynchronizer.Core.Support.CSharpTest.Net;
 using PathsSynchronizer.Core.Support.IO;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -69,7 +70,43 @@ namespace PathsSynchronizer.Test
         public void FastFileFinderTest()
         {
             //No actual test, just for testing the FastFileFinder class
-            var fileList = FastFileFinder.GetFiles(@"C:\development", "*", true, false, true);
+            var fileList = FastFileFinder.GetFiles(@"C:\temp", "*", true, true, false);
+        }
+
+        [TestMethod]
+        public void FastFileFinderTestFilterFileOrDirInsideEventHandlerOrLater()
+        {
+            IList<(bool, string)> fileList = new List<(bool, string)>();
+
+            FindFile handler = new(@"C:\development\dotnet\GitFashion", "*", true, false, true)
+            {
+                RaiseOnAccessDenied = false
+            };
+
+            handler.FileFound += (o, e) => fileList.Add((e.IsDirectory, e.FullPath));
+
+            Stopwatch sw = Stopwatch.StartNew();
+            handler.Find();
+            var onlyFileList = fileList.Where(x => !x.Item1).ToArray();
+            var noIfElapsed = sw.Elapsed;
+
+            //----
+
+            IList<string> fileList2 = new List<string>();
+
+            FindFile handler2 = new(@"C:\development\dotnet\GitFashion", "*", true, false, true)
+            {
+                RaiseOnAccessDenied = false
+            };
+
+            handler2.FileFound += (o, e) => { if (!e.IsDirectory) fileList2.Add(e.FullPath); };
+
+            Stopwatch sw2 = Stopwatch.StartNew();
+            handler2.Find();
+
+            var yesIfElapsed = sw.Elapsed;
+
+            var delta = yesIfElapsed - noIfElapsed;
         }
     }
 }
