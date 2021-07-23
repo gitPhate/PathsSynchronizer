@@ -38,6 +38,7 @@ namespace PathsSynchronizer.Test
 
             DirectoryChecksumTable tableDeserialized = await DirectoryChecksumTable.FromSerializedAsync(bytes).ConfigureAwait(false);
             Assert.IsTrue(table.Count == tableDeserialized.Count);
+            CollectionAssert.AreEqual(table.Keys.ToArray(), tableDeserialized.Keys.ToArray());
         }
 
         [TestMethod]
