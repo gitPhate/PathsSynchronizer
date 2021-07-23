@@ -13,37 +13,23 @@ namespace PathsSynchronizer.Test
     public class MainTests
     {
         [TestMethod]
-        public async Task TestDirectoryChecksumTableBuilderAsync()
-        {
-            DirectoryChecksumTable table =
-                await
-                    DirectoryChecksumTableBuilder
-                    .CreateNew
-                    (
-                        @"C:\Temp\Consul",
-                        FileChecksumMode.FileHash
-                    )
-                    .BuildAsync(0)
-                    .ConfigureAwait(false);
-
-            Assert.IsTrue(true);
-        }
-
-        [TestMethod]
         public async Task TestDirectoryChecksumTableSerialization()
         {
             Stopwatch sw = Stopwatch.StartNew();
             DirectoryChecksumTable table =
-                await
-                    DirectoryChecksumTableBuilder
-                        .CreateNew
-                        (
-                            @"C:\development\dotnet\GitFashion",
-                            //@"C:\temp",
-                            FileChecksumMode.FileHash
-                        )
-                        .BuildAsync(1000)
-                        .ConfigureAwait(false);
+                DirectoryChecksumTableBuilder
+                    .CreateNew
+                    (
+                        @"C:\development\dotnet\GitFashion",
+                        //@"C:\temp",
+                        new DirectoryChecksumTableBuilderOptions
+                        {
+                            HashingPlatform = Core.Support.XXHash.XXHashPlatform.x86,
+                            MaxParallelOperations = 1000,
+                            Mode = FileChecksumMode.FileHash
+                        }
+                    )
+                    .Build();
 
             var elapsed = sw.Elapsed;
 
