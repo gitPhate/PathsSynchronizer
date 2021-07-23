@@ -5,7 +5,7 @@ namespace PathsSynchronizer.Core.Checksum
 {
     public class DirectoryChecksumTableData
     {
-        public IReadOnlyDictionary<string, ulong> ChecksumTable { get; set; }
+        public IReadOnlyDictionary<ulong, string> ChecksumTable { get; set; }
         public string DirectoryPath { get; set; }
         public FileChecksumMode Mode { get; set; }
 
@@ -13,9 +13,9 @@ namespace PathsSynchronizer.Core.Checksum
         {
         }
 
-        public DirectoryChecksumTableData(IDictionary<string, ulong> checksumTable, string directoryPath, FileChecksumMode mode)
+        public DirectoryChecksumTableData(IDictionary<ulong, string> checksumTable, string directoryPath, FileChecksumMode mode)
         {
-            ChecksumTable = new ReadOnlyDictionary<string, ulong>(checksumTable ?? new Dictionary<string, ulong>());
+            ChecksumTable = new ReadOnlyDictionary<ulong, string>(checksumTable ?? new Dictionary<ulong, string>());
             DirectoryPath = directoryPath;
             Mode = mode;
         }

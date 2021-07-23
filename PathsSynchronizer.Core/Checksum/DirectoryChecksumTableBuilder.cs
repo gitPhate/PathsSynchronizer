@@ -47,7 +47,7 @@ namespace PathsSynchronizer.Core.Checksum
 
         public DirectoryChecksumTable Build()
         {
-            ConcurrentDictionary<string, ulong> dataDict = new();
+            ConcurrentDictionary<ulong, string> dataDict = new();
             IList<string> fileList = FastFileFinder.GetFiles(DirectoryPath, "*", true);
 
             Func<string, ulong> hashModeFx = Mode switch
@@ -65,7 +65,7 @@ namespace PathsSynchronizer.Core.Checksum
                     file =>
                     {
                         ulong checksum = hashModeFx(file);
-                        dataDict.TryAdd(file, checksum);
+                        dataDict.TryAdd(checksum, file);
                     }
                 );
 
