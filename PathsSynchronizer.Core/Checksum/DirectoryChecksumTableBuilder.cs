@@ -48,7 +48,7 @@ namespace PathsSynchronizer.Core.Checksum
         public DirectoryChecksumTable Build()
         {
             ConcurrentDictionary<ulong, string> dataDict = new();
-            IList<string> fileList = FastFileFinder.GetFiles(DirectoryPath, "*", true);
+            IList<string> fileList = FastFileFinder.GetFilePaths(DirectoryPath, "*", true);
 
             Func<string, ulong> hashModeFx = Mode switch
             {
