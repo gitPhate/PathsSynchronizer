@@ -109,25 +109,10 @@ UpgradeLog*.htm
 *.mdf
 *.ldf
 
-Fashion-Customers/EnoAssistence/Specifiche prese il 16_10_2009.docx
-Products/Dev/WmX/Mobile/.idea/Mobile.iml
-Products/Dev/WmX/Mobile/.idea/
-
 #RiderC#
 .idea/
 *.*.iml
 Fashion-Customers/PA/Dev/Wmx.PAIEWeb/Wmx.PAIEWeb/log.txt
 *.dll
-!/Kernel/\Dev/RequiredPackages/*.dll
-Products/Dev/QualityX/Mobile/QualityXApp/QualityXApp/QualityXApp.UWP/project.lock.json
-KComponents/Dev/KBizEventStore/KBizEventStore.UI.Controls/Build/BuildTimestamp.cs
-Fashion-Customers/Morato/FXS
-Fashion-Customers/Industries/Dev/QualityXApp\.Industries/QualityXApp/QualityXApp\.UWP/project\.lock\.json
-Fashion-Customers/LiuJo/ScmX/KeX.Command/ScmX.LiuJo.CreateAdvanceGroup.Command/Build/errors.txt
-Fashion-Customers/LiuJo/ScmX/KeX.Command/ScmX.LiuJo.CreateAdvanceGroup.Command/Build/warnings.txt
-/Fashion-Customers/Industries/Dev/QualityXApp.Ispettori/QualityXApp.Ispettori/Temp
-/Fashion-Customers/Industries/Dev/QualityXApp.Ispettori/QualityXApp.Ispettori/QualityXApp.Ispettori.UWP/AppPackages/QualityXApp.Ispettori.UWP_2.3.1.0_Debug_Test
-/Fashion-Customers/Industries/Dev/QualityXApp.Ispettori/QualityXApp.Ispettori/QualityXApp.Ispettori.UWP/BundleArtifacts
-/Fashion-Customers/Industries/Dev/QualityXApp.Ispettori/QualityXApp.Ispettori/QualityXApp.Ispettori.UWP/AppPackages
-/Fashion-Customers/Industries/Dev/2013/QualityX.WebSite.Industries/QualityX.WebSite/Properties/PublishProfiles/FolderProfile.pubxml
-/Fashion-Customers/Industries/Dev/2013/QualityX.WebSite.Industries/QualityX.WebSite/Properties/PublishProfiles/FolderProfile.pubxml
+!/RequiredPackages/*.dll
+
