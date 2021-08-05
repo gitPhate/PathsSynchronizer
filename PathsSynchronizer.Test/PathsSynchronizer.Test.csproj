@@ -17,4 +17,10 @@
     <ProjectReference Include="..\PathsSynchronizer.Core\PathsSynchronizer.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Hector.Core">
+      <HintPath>..\RequiredPackages\Hector.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

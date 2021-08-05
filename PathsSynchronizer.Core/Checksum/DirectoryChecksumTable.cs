@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using PathsSynchronizer.Core.Support.Compression;
-using System;
+﻿using Hector.Core.Compression.GZip;
+using Hector.Core.Support;
+using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,7 +14,7 @@ namespace PathsSynchronizer.Core.Checksum
     {
         private readonly IReadOnlyDictionary<ulong, string> _checksumTable;
 
-        #region IRe
+        #region IReadOnlyDictionary
 
         public string this[ulong key] => _checksumTable[key];
 
@@ -39,10 +39,7 @@ namespace PathsSynchronizer.Core.Checksum
 
         private DirectoryChecksumTable(DirectoryChecksumTableData data)
         {
-            if (string.IsNullOrWhiteSpace(data.DirectoryPath))
-            {
-                throw new ArgumentNullException(nameof(data.DirectoryPath), "The provided path is null or blank");
-            }
+            data.DirectoryPath.AssertHasText(nameof(data.DirectoryPath), "The provided path is null or blank");
 
             if (!Directory.Exists(data.DirectoryPath))
             {
@@ -61,7 +58,7 @@ namespace PathsSynchronizer.Core.Checksum
 
         public async Task<byte[]> SerializeAsync()
         {
-            string dirPath = (DirectoryPath.Substring(DirectoryPath.Length - 1) == "\\") ? DirectoryPath : $"{DirectoryPath}\\";
+            string dirPath = (DirectoryPath[^1..] == "\\") ? DirectoryPath : $"{DirectoryPath}\\";
 
             IDictionary<ulong, string> auxDictionary = new Dictionary<ulong, string>();
             foreach (var item in _checksumTable)
@@ -75,7 +72,7 @@ namespace PathsSynchronizer.Core.Checksum
             return await GZipHelper.CompressStringAsync(json).ConfigureAwait(false);
         }
 
-        public static async Task<DirectoryChecksumTable> FromSerializedAsync(byte[] bytes)
+        public static async Task<DirectoryChecksumTable> DeserializeAsync(byte[] bytes)
         {
             string json = await GZipHelper.DecompressStringAsync(bytes).ConfigureAwait(false);
             DirectoryChecksumTableData data = JsonConvert.DeserializeObject<DirectoryChecksumTableData>(json);
@@ -83,7 +80,7 @@ namespace PathsSynchronizer.Core.Checksum
             IDictionary<ulong, string> auxDictionary = new Dictionary<ulong, string>();
             foreach (var item in data.ChecksumTable)
             {
-                string value = Path.Combine(data.DirectoryPath, item.Value);
+                string value = data.DirectoryPath.CombinePaths(item.Value);
                 auxDictionary.Add(item.Key, value);
             }
 

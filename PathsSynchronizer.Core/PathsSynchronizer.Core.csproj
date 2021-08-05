@@ -9,4 +9,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Hector.Core">
+      <HintPath>..\RequiredPackages\Hector.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

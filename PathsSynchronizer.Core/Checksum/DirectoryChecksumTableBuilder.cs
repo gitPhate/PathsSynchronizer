@@ -1,4 +1,5 @@
-﻿using PathsSynchronizer.Core.Support.IO;
+﻿using Hector.Core.Support;
+using PathsSynchronizer.Core.Support.IO;
 using PathsSynchronizer.Core.Support.XXHash;
 using System;
 using System.Collections.Concurrent;
@@ -25,10 +26,7 @@ namespace PathsSynchronizer.Core.Checksum
 
         protected DirectoryChecksumTableBuilder(string directoryPath, DirectoryChecksumTableBuilderOptions options)
         {
-            if (string.IsNullOrWhiteSpace(directoryPath))
-            {
-                throw new ArgumentNullException(nameof(directoryPath), "The provided path is null or blank");
-            }
+            directoryPath.AssertHasText(nameof(directoryPath), "The provided path is null or blank");
 
             options ??= DirectoryChecksumTableBuilderOptions.Default;
 
@@ -53,7 +51,7 @@ namespace PathsSynchronizer.Core.Checksum
             Func<string, ulong> hashModeFx = Mode switch
             {
                 FileChecksumMode.FileHash => CalculateFileChecksumUsingFileContent,
-                FileChecksumMode.FileName => CalculateFileChecksumUsingFileName,
+                FileChecksumMode.FileName => CalculateFileChecksumUsingFilePath,
                 _ => throw new NotImplementedException()
             };
 
@@ -80,7 +78,7 @@ namespace PathsSynchronizer.Core.Checksum
             return checksum;
         }
 
-        private ulong CalculateFileChecksumUsingFileName(string filePath)
+        private ulong CalculateFileChecksumUsingFilePath(string filePath)
         {
             byte[] filePathBytes = Encoding.UTF8.GetBytes(filePath);
             using Stream hashFxInputStream = new MemoryStream(filePathBytes);

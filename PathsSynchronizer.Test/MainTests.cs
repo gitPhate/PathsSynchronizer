@@ -37,7 +37,7 @@ namespace PathsSynchronizer.Test
             byte[] bytes = await table.SerializeAsync().ConfigureAwait(false);
             Assert.IsTrue(bytes.Any());
 
-            DirectoryChecksumTable tableDeserialized = await DirectoryChecksumTable.FromSerializedAsync(bytes).ConfigureAwait(false);
+            DirectoryChecksumTable tableDeserialized = await DirectoryChecksumTable.DeserializeAsync(bytes).ConfigureAwait(false);
             Assert.IsTrue(table.Count == tableDeserialized.Count);
             CollectionAssert.AreEqual(table.Keys.ToArray(), tableDeserialized.Keys.ToArray());
         }
