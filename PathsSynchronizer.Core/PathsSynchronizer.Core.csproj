@@ -1,18 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="HashDepot" Version="2.0.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Hector.Core">
-      <HintPath>..\RequiredPackages\Hector.Core.dll</HintPath>
-    </Reference>
+    <PackageReference Include="K4os.Hash.xxHash" Version="1.0.7" />
   </ItemGroup>
 
 </Project>

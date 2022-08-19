@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31313.79
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PathsSynchronizer.Core", "PathsSynchronizer.Core\PathsSynchronizer.Core.csproj", "{8C236E0C-E50E-422F-A44E-954E783B27E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer.Test", "PathsSynchronizer.Test\PathsSynchronizer.Test.csproj", "{E60F85DF-E793-404E-A3FA-A9B1DFE005B2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSyncronizer.Test", "PathsSyncronizer.Test\PathsSyncronizer.Test.csproj", "{2DC24A27-839B-43C1-9BD9-5715E306DC8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{8C236E0C-E50E-422F-A44E-954E783B27E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C236E0C-E50E-422F-A44E-954E783B27E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C236E0C-E50E-422F-A44E-954E783B27E1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E60F85DF-E793-404E-A3FA-A9B1DFE005B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E60F85DF-E793-404E-A3FA-A9B1DFE005B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E60F85DF-E793-404E-A3FA-A9B1DFE005B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E60F85DF-E793-404E-A3FA-A9B1DFE005B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DC24A27-839B-43C1-9BD9-5715E306DC8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DC24A27-839B-43C1-9BD9-5715E306DC8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DC24A27-839B-43C1-9BD9-5715E306DC8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DC24A27-839B-43C1-9BD9-5715E306DC8E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

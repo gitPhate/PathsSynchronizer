@@ -1,17 +1,18 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace PathsSynchronizer.Core.Checksum
 {
-    public class DirectoryChecksumTableData
+    public class DirectoryChecksumTableData<THash> where THash : notnull
     {
-        public IReadOnlyDictionary<ulong, string> ChecksumTable { get; set; }
-        public string DirectoryPath { get; set; }
-        public FileChecksumMode Mode { get; set; }
+        public IReadOnlyDictionary<string, FileChecksum<THash>> ChecksumTable { get; }
+        public string DirectoryPath { get; }
+        public FileChecksumMode Mode { get; }
 
-        public DirectoryChecksumTableData(IDictionary<ulong, string> checksumTable, string directoryPath, FileChecksumMode mode)
+        [JsonConstructor]
+        public DirectoryChecksumTableData(IReadOnlyDictionary<string, FileChecksum<THash>> checksumTable, string directoryPath, FileChecksumMode mode)
         {
-            ChecksumTable = new ReadOnlyDictionary<ulong, string>(checksumTable ?? new Dictionary<ulong, string>());
+            ChecksumTable = checksumTable;
             DirectoryPath = directoryPath;
             Mode = mode;
         }
