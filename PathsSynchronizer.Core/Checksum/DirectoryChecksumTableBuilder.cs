@@ -1,6 +1,7 @@
 ﻿using PathsSynchronizer.Core.Hashing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -67,7 +68,6 @@ namespace PathsSynchronizer.Core.Checksum
             {
                 THash hash = await _fileHashProvider.HashFileAsync(filePath).ConfigureAwait(false);
                 FileChecksum<THash> fileChecksum = new(filePath, hash);
-
                 data.Add(filePath, fileChecksum);
             }
 
