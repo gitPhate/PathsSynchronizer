@@ -1,4 +1,5 @@
 ﻿using PathsSynchronizer.Core.Hashing;
+using PathsSynchronizer.Core.Support.IO;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -61,7 +62,7 @@ namespace PathsSynchronizer.Core.Checksum
             }
 
             _fileHashProvider = new(_hashProvider, _fileChecksumMode.Value);
-            string[] files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+            var files = IOHelper.EnumerateFiles(folderPath, x => !x.Contains("system volume information", StringComparison.OrdinalIgnoreCase) && !x.Contains("recycle", StringComparison.OrdinalIgnoreCase), "*");
             Dictionary<string, FileChecksum<THash>> data = new();
 
             foreach (string filePath in files)

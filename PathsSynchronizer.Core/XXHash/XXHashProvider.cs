@@ -11,18 +11,18 @@ namespace PathsSynchronizer.Core.XXHash
     {
         const int _chucksBufferSize = 1024 * 1024 * 50; //50MB
 
-        public async ValueTask<ulong> HashFileAsync(string filePath)
+        public ValueTask<ulong> HashFileAsync(string filePath)
         {
             FileInfo fileInfo = new(filePath);
 
-            ulong hash =
+            Task<ulong> hashTask =
                 fileInfo.Length switch
                 {
-                    < _chucksBufferSize => await HashFileOneShotAsync(filePath).ConfigureAwait(false),
-                    _ => await HashFileByChuncksWithProducerConsumerAsync(filePath).ConfigureAwait(false)
+                    < _chucksBufferSize => HashFileOneShotAsync(filePath),
+                    _ => HashFileByChuncksWithProducerConsumerAsync(filePath)
                 };
 
-            return hash;
+            return new ValueTask<ulong>(hashTask);
         }
 
         private static async ValueTask<ulong> HashFileByChuncksAsync(string filePath)
@@ -54,7 +54,7 @@ namespace PathsSynchronizer.Core.XXHash
             return chucksFileHash;
         }
 
-        private static async ValueTask ProduceFileChunks(string filePath, ITargetBlock<Memory<byte>> dataFlowBuffer)
+        private static async ValueTask ProduceFileChunks(string filePath, BufferBlock<Memory<byte>> dataFlowBuffer)
         {
             const int _chucksBufferSize = 1024 * 256; //0.25MB
 
@@ -63,12 +63,10 @@ namespace PathsSynchronizer.Core.XXHash
 
             int bytesRead;
             byte[] buffer = new byte[_chucksBufferSize];
-            byte[] buffer2 = new byte[_chucksBufferSize];
 
             while ((bytesRead = await bs.ReadAsync(buffer).ConfigureAwait(false)) > 0)
             {
-                buffer.CopyTo(buffer2, 0);
-                Memory<byte> memory = buffer2.AsMemory(0, bytesRead);
+                Memory<byte> memory = buffer.AsMemory(0, bytesRead);
                 dataFlowBuffer.Post(memory);
             }
 

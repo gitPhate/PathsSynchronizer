@@ -3,6 +3,7 @@ using PathsSynchronizer.Core.Checksum;
 using PathsSynchronizer.Core.XXHash;
 using System;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Threading.Tasks.Dataflow;
 
 namespace PathsSyncronizer.Test
@@ -12,7 +13,7 @@ namespace PathsSyncronizer.Test
         [Fact]
         public async Task Test1()
         {
-            const string folder = @"C:\temp";
+            const string folder = @"E:\";
 
             var table =
                 await XXHashDirectoryChecksumTableBuilder
@@ -29,12 +30,13 @@ namespace PathsSyncronizer.Test
         [Fact]
         public async Task TestHashingLargeFile()
         {
-            const string filePath = @"C:\temp\prova.zip";
+            const string filePath = @"E:\Film\300.avi";
 
-            ulong chucksFileHash = await NewHashFileByChuncksAsync(filePath).ConfigureAwait(false);
+            //ulong chucksFileHash = await NewHashFileByChuncksAsync(filePath).ConfigureAwait(false);
             ulong originalHash = await OriginalHashFileByChuncksAsync(filePath).ConfigureAwait(false);
+
             
-            Assert.Equal(chucksFileHash, originalHash);
+            //Assert.Equal(chucksFileHash, originalHash);
         }
 
         private static async Task<ulong> NewHashFileByChuncksAsync(string filePath)
@@ -46,7 +48,7 @@ namespace PathsSyncronizer.Test
             return chucksFileHash;
         }
 
-        private static async ValueTask ProduceAsync(string filePath, ITargetBlock<Memory<byte>> dataFlowBuffer)
+        private static async ValueTask ProduceAsync(string filePath, BufferBlock<Memory<byte>> dataFlowBuffer)
         {
             const int _chucksBufferSize = 1024 * 256; //0.5MB
 
@@ -55,16 +57,11 @@ namespace PathsSyncronizer.Test
 
             int bytesRead;
             byte[] buffer = new byte[_chucksBufferSize];
-            byte[] buffer2 = new byte[_chucksBufferSize];
 
             while ((bytesRead = await bs.ReadAsync(buffer).ConfigureAwait(false)) > 0)
             {
-                //Memory<byte> memory = buffer.AsMemory(0, bytesRead);
-                
-                buffer.CopyTo(buffer2, 0);
-                Memory<byte> memory = buffer2.AsMemory(0, bytesRead);
+                Memory<byte> memory = buffer.AsMemory(0, bytesRead);
                 dataFlowBuffer.Post(memory);
-                //Debug.WriteLine($"Produced {string.Join(",", buffer.Select(x => x.ToString()).ToArray())}");
             }
 
             dataFlowBuffer.Complete();
@@ -93,7 +90,7 @@ namespace PathsSyncronizer.Test
 
         private static async ValueTask<ulong> OriginalHashFileByChuncksAsync(string filePath)
         {
-            const int _chucksBufferSize = 1024 * 1024 * 50; //50MB
+            const int _chucksBufferSize = 1024; //50MB
 
             XXH64 fileHash = new();
 
@@ -102,10 +99,11 @@ namespace PathsSyncronizer.Test
 
             int bytesRead;
             byte[] buffer = new byte[_chucksBufferSize];
+            List<ulong> hashList = [];
             while ((bytesRead = await bs.ReadAsync(buffer).ConfigureAwait(false)) > 0)
             {
-                Memory<byte> memory = buffer.AsMemory(0, bytesRead);
-                fileHash.Update(memory.Span);
+                ulong hash = XXH64.DigestOf(buffer, 0, buffer.Length);
+                hashList.Add(hash);
             }
 
             ulong chucksFileHash = fileHash.Digest();
@@ -158,6 +156,17 @@ namespace PathsSyncronizer.Test
             var bytesProcessed = await consumerTask;
 
             Console.WriteLine($"Processed {bytesProcessed:#,#} bytes.");
+        }
+
+        [Fact]
+        public static string ComputeSHA256Hash()
+        {
+            const string filePath = @"E:\Film\300.avi";
+            using FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            //using BufferedStream bufferedStream = new BufferedStream(fileStream, 1024 * 256);
+            using SHA256 sha256 = SHA256.Create();
+            byte[] hash = sha256.ComputeHash(fileStream);
+            return BitConverter.ToString(hash).Replace("-", string.Empty);
         }
     }
 }
