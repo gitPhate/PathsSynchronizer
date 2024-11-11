@@ -3,6 +3,7 @@ using PathsSynchronizer.Core.Checksum;
 using PathsSynchronizer.Core.XXHash;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Management;
 using System.Security.Cryptography;
 using System.Threading.Tasks.Dataflow;
 
@@ -15,7 +16,7 @@ namespace PathsSyncronizer.Test
         {
             const string folder = @"E:\";
 
-            var table =
+            DirectoryChecksumTable<ulong> table =
                 await XXHashDirectoryChecksumTableBuilder
                     .CreateNew()
                     .WithFileHashMode()
@@ -33,14 +34,17 @@ namespace PathsSyncronizer.Test
             const string filePath1 = @"C:\Users\ServiceAccount\Desktop\300.avi";
             const string filePath2 = @"E:\Film\300.avi";
 
-            //ulong chucksFileHash = await NewHashFileByChuncksAsync(filePath).ConfigureAwait(false);
-            ulong originalHash = await OriginalHashFileByChuncksAsync(filePath2).ConfigureAwait(false);
+            bool isRemovableDrive = IsRemovableDrive(filePath1);
+            int chucksBufferSize = isRemovableDrive ? 4096 : 1048576;
 
-            //ulong hash1 = await HashFileOneShotAsync(filePath1).ConfigureAwait(false);
-            //ulong hash2 = await HashFileOneShotAsync(filePath2).ConfigureAwait(false);
+            ulong fileSystemHash = await FinalHashFileByChuncksAsync(filePath1, chucksBufferSize).ConfigureAwait(false);
 
+            isRemovableDrive = IsRemovableDrive(filePath2);
+            chucksBufferSize = isRemovableDrive ? 4096 : 1048576;
 
-            //Assert.Equal(hash1, hash2);
+            ulong removableDriveHash = await FinalHashFileByChuncksAsync(filePath2, chucksBufferSize).ConfigureAwait(false);
+
+            Assert.Equal(fileSystemHash, removableDriveHash);
         }
 
         private static async Task<ulong> NewHashFileByChuncksAsync(string filePath)
@@ -126,17 +130,14 @@ namespace PathsSyncronizer.Test
         //This is the final version of the hashing method
         //Tested on a maxtor external hdd and the filesystem
         //When on the normal filesystem set the buffer size to 1048576 (1 MB)
-        private static async ValueTask<ulong> OriginalHashFileByChuncksAsync(string filePath)
+        private static async ValueTask<ulong> FinalHashFileByChuncksAsync(string filePath, int chucksBufferSize)
         {
-            const int _chucksBufferSize = 4096;
-            //const int _chucksBufferSize = 1048576; //1MB
-
             XXH64 fileHash = new();
 
             using FileStream fs = File.OpenRead(filePath);
 
             int bytesRead;
-            byte[] buffer = new byte[_chucksBufferSize];
+            byte[] buffer = new byte[chucksBufferSize];
             while ((bytesRead = await fs.ReadAsync(buffer).ConfigureAwait(false)) > 0)
             {
                 fileHash.Update(buffer, 0, bytesRead);
@@ -185,11 +186,11 @@ namespace PathsSyncronizer.Test
         [Fact]
         public async Task ProducerConsumerTest()
         {
-            var buffer = new BufferBlock<byte[]>();
-            var consumerTask = TestConsumeAsync(buffer);
+            BufferBlock<byte[]> buffer = new BufferBlock<byte[]>();
+            Task<ulong> consumerTask = TestConsumeAsync(buffer);
             TestProduce(buffer);
 
-            var bytesProcessed = await consumerTask;
+            ulong bytesProcessed = await consumerTask;
 
             Console.WriteLine($"Processed {bytesProcessed:#,#} bytes.");
         }
@@ -214,6 +215,50 @@ namespace PathsSyncronizer.Test
 
             ulong oneShotFileHash = XXH64.DigestOf(allFile, 0, allFile.Length);
             return oneShotFileHash;
+        }
+
+        private static bool IsRemovableDrive(string path)
+        {
+            DriveInfo currentDrive = new(path);
+            DriveInfo[] drives = DriveInfo.GetDrives();
+
+            ManagementObjectCollection allPhysicalDisks = new ManagementObjectSearcher("select MediaType, DeviceID from Win32_DiskDrive").Get();
+
+            foreach (ManagementBaseObject? physicalDisk in allPhysicalDisks)
+            {
+                ManagementObjectCollection allPartitionsOnPhysicalDisk = new ManagementObjectSearcher($"associators of {{Win32_DiskDrive.DeviceID='{physicalDisk["DeviceID"]}'}} where AssocClass = Win32_DiskDriveToDiskPartition").Get();
+                foreach (ManagementBaseObject? partition in allPartitionsOnPhysicalDisk)
+                {
+                    if (partition is null)
+                    {
+                        continue;
+                    }
+
+                    ManagementObjectCollection allLogicalDisksOnPartition = new ManagementObjectSearcher($"associators of {{Win32_DiskPartition.DeviceID='{partition["DeviceID"]}'}} where AssocClass = Win32_LogicalDiskToPartition").Get();
+                    foreach (ManagementBaseObject? logicalDisk in allLogicalDisksOnPartition)
+                    {
+                        if (logicalDisk is null)
+                        {
+                            continue;
+                        }
+
+                        DriveInfo? drive = drives.FirstOrDefault(x => x.Name.StartsWith(logicalDisk["Name"] as string, StringComparison.OrdinalIgnoreCase));
+                        if (drive is null)
+                        {
+                            continue;
+                        }
+
+                        string mediaType = (physicalDisk["MediaType"] as string) ?? string.Empty;
+                        if ((mediaType.Contains("external", StringComparison.OrdinalIgnoreCase) || mediaType.Contains("removable", StringComparison.OrdinalIgnoreCase))
+                            && drive.Name == currentDrive.Name)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }
