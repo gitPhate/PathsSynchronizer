@@ -1,3 +1,4 @@
+using FluentAssertions;
 using K4os.Hash.xxHash;
 using PathsSynchronizer.Core.Checksum;
 using PathsSynchronizer.Core.Hashing;
@@ -15,7 +16,7 @@ namespace PathsSyncronizer.Test
         [Fact]
         public async Task TestSerialization()
         {
-            const string folder = @"C:\development\dotnet\PathsSynchronizer";
+            const string folder = @"C:\FabricServer";
 
             IHashProvider<ulong> hashProvider = new XXHashProvider();
             FileChecksumMode fileChecksumMode = FileChecksumMode.FileHash;
@@ -32,7 +33,7 @@ namespace PathsSyncronizer.Test
                 await DirectoryChecksum<ulong>
                     .DeserializeAsync(ms);
 
-            Assert.Equivalent(directoryChecksum.FileChecksumList, directoryChecksumDeserialized.FileChecksumList);
+            directoryChecksum.FileChecksumList.Should().Equal(directoryChecksumDeserialized.FileChecksumList);
         }
 
         [Fact]
@@ -51,7 +52,7 @@ namespace PathsSyncronizer.Test
 
             ulong removableDriveHash = await FinalHashFileByChuncksAsync(filePath2, chucksBufferSize);
 
-            Assert.Equal(fileSystemHash, removableDriveHash);
+            fileSystemHash.Should().Be(removableDriveHash);
         }
 
         private static async Task<ulong> NewHashFileByChuncksAsync(string filePath)
