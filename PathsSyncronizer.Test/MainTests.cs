@@ -1,7 +1,7 @@
 using K4os.Hash.xxHash;
 using PathsSynchronizer.Core.Checksum;
 using PathsSynchronizer.Core.XXHash;
-using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Threading.Tasks.Dataflow;
@@ -30,13 +30,17 @@ namespace PathsSyncronizer.Test
         [Fact]
         public async Task TestHashingLargeFile()
         {
-            const string filePath = @"E:\Film\300.avi";
+            const string filePath1 = @"C:\Users\ServiceAccount\Desktop\300.avi";
+            const string filePath2 = @"E:\Film\300.avi";
 
             //ulong chucksFileHash = await NewHashFileByChuncksAsync(filePath).ConfigureAwait(false);
-            ulong originalHash = await OriginalHashFileByChuncksAsync(filePath).ConfigureAwait(false);
+            ulong originalHash = await OriginalHashFileByChuncksAsync(filePath2).ConfigureAwait(false);
 
-            
-            //Assert.Equal(chucksFileHash, originalHash);
+            //ulong hash1 = await HashFileOneShotAsync(filePath1).ConfigureAwait(false);
+            //ulong hash2 = await HashFileOneShotAsync(filePath2).ConfigureAwait(false);
+
+
+            //Assert.Equal(hash1, hash2);
         }
 
         private static async Task<ulong> NewHashFileByChuncksAsync(string filePath)
@@ -88,9 +92,10 @@ namespace PathsSyncronizer.Test
             return chucksFileHash;
         }
 
-        private static async ValueTask<ulong> OriginalHashFileByChuncksAsync(string filePath)
+        private static async ValueTask<ulong> New2HashFileByChuncksAsync(string filePath)
         {
-            const int _chucksBufferSize = 1024; //50MB
+            //const int _chucksBufferSize = 1048576; //50MB
+            const int _chucksBufferSize = 4096;
 
             XXH64 fileHash = new();
 
@@ -99,11 +104,42 @@ namespace PathsSyncronizer.Test
 
             int bytesRead;
             byte[] buffer = new byte[_chucksBufferSize];
-            List<ulong> hashList = [];
+            ConcurrentBag<ulong> hashList = [];
+            List<Task> taskList = [];
             while ((bytesRead = await bs.ReadAsync(buffer).ConfigureAwait(false)) > 0)
             {
+                Task t = hashAsync(ref buffer, hashList);
+                taskList.Add(t);
+            }
+
+            Task hashAsync(ref byte[] buffer, ConcurrentBag<ulong> list)
+            {
                 ulong hash = XXH64.DigestOf(buffer, 0, buffer.Length);
-                hashList.Add(hash);
+                list.Add(hash);
+                return Task.CompletedTask;
+            }
+
+            ulong chucksFileHash = fileHash.Digest();
+            return chucksFileHash;
+        }
+
+        //This is the final version of the hashing method
+        //Tested on a maxtor external hdd and the filesystem
+        //When on the normal filesystem set the buffer size to 1048576 (1 MB)
+        private static async ValueTask<ulong> OriginalHashFileByChuncksAsync(string filePath)
+        {
+            const int _chucksBufferSize = 4096;
+            //const int _chucksBufferSize = 1048576; //1MB
+
+            XXH64 fileHash = new();
+
+            using FileStream fs = File.OpenRead(filePath);
+
+            int bytesRead;
+            byte[] buffer = new byte[_chucksBufferSize];
+            while ((bytesRead = await fs.ReadAsync(buffer).ConfigureAwait(false)) > 0)
+            {
+                fileHash.Update(buffer, 0, bytesRead);
             }
 
             ulong chucksFileHash = fileHash.Digest();
@@ -167,6 +203,17 @@ namespace PathsSyncronizer.Test
             using SHA256 sha256 = SHA256.Create();
             byte[] hash = sha256.ComputeHash(fileStream);
             return BitConverter.ToString(hash).Replace("-", string.Empty);
+        }
+
+        private static async Task<ulong> HashFileOneShotAsync(string filePath)
+        {
+            byte[] allFile =
+                await File
+                    .ReadAllBytesAsync(filePath)
+                    .ConfigureAwait(false);
+
+            ulong oneShotFileHash = XXH64.DigestOf(allFile, 0, allFile.Length);
+            return oneShotFileHash;
         }
     }
 }
