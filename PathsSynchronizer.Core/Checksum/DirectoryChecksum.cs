@@ -1,7 +1,6 @@
 ﻿using PathsSynchronizer.Core.Hashing;
 using PathsSynchronizer.Core.Support.GZip;
 using PathsSynchronizer.Core.Support.IO;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
