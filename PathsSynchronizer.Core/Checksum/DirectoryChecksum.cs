@@ -1,6 +1,7 @@
 ﻿using PathsSynchronizer.Core.Hashing;
 using PathsSynchronizer.Core.Support.GZip;
 using PathsSynchronizer.Core.Support.IO;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +11,12 @@ using System.Threading.Tasks;
 namespace PathsSynchronizer.Core.Checksum
 {
     public enum FileChecksumMode { FileName, FileHash }
-    public record FileChecksum<T>(string FilePath, T Hash) where T : notnull;
+    public record FileChecksum<T>(string FilePath, T Hash) where T : notnull
+    {
+        public override int GetHashCode() => Hash.GetHashCode() ^ 16777619;
+
+        public virtual bool Equals(FileChecksum<T>? obj) => obj != null && Hash.Equals(obj.Hash);
+    }
     public record DirectoryChecksumModel<T>(FileChecksum<T>[] FileChecksumList, string DirectoryPath, FileChecksumMode Mode) where T : notnull;
 
     public class DirectoryChecksum<T> where T : notnull
