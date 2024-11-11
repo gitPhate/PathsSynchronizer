@@ -5,20 +5,20 @@ using System.Threading.Tasks;
 
 namespace PathsSynchronizer.Core.Hashing
 {
-    public class FileHashProvider<THash> where THash : notnull
+    public class FileHashProvider<T> where T : notnull
     {
-        private readonly IHashProvider<THash> _hashProvider;
+        private readonly IHashProvider<T> _hashProvider;
         private readonly FileChecksumMode _mode;
 
-        public FileHashProvider(IHashProvider<THash> hashProvider, FileChecksumMode mode)
+        public FileHashProvider(IHashProvider<T> hashProvider, FileChecksumMode mode)
         {
             _hashProvider = hashProvider;
             _mode = mode;
         }
 
-        public async ValueTask<THash> HashFileAsync(string filePath)
+        public async ValueTask<T> HashFileAsync(string filePath)
         {
-            THash hash =
+            T hash =
                 await (_mode switch
                 {
                     FileChecksumMode.FileName => HashFileByPathAsync(filePath),
@@ -30,10 +30,10 @@ namespace PathsSynchronizer.Core.Hashing
             return hash;
         }
 
-        private ValueTask<THash> HashFileByBytesAsync(string filePath) =>
+        private ValueTask<T> HashFileByBytesAsync(string filePath) =>
             _hashProvider.HashFileAsync(filePath);
 
-        private async ValueTask<THash> HashFileByPathAsync(string filePath)
+        private async ValueTask<T> HashFileByPathAsync(string filePath)
         {
             byte[] allFile = Encoding.UTF8.GetBytes(filePath);
             return await _hashProvider.HashBytesAsync(allFile).ConfigureAwait(false);

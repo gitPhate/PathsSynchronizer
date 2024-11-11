@@ -1,5 +1,6 @@
 using K4os.Hash.xxHash;
 using PathsSynchronizer.Core.Checksum;
+using PathsSynchronizer.Core.Hashing;
 using PathsSynchronizer.Core.XXHash;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -12,20 +13,26 @@ namespace PathsSyncronizer.Test
     public class MainTests
     {
         [Fact]
-        public async Task Test1()
+        public async Task TestSerialization()
         {
-            const string folder = @"E:\";
+            const string folder = @"C:\development\dotnet\PathsSynchronizer";
 
-            DirectoryChecksumTable<ulong> table =
-                await XXHashDirectoryChecksumTableBuilder
-                    .CreateNew()
-                    .WithFileHashMode()
-                    .BuildAsync(folder)
-                    .ConfigureAwait(false);
+            IHashProvider<ulong> hashProvider = new XXHashProvider();
+            FileChecksumMode fileChecksumMode = FileChecksumMode.FileHash;
 
-            byte[] bytes = await table.SerializeAsync().ConfigureAwait(false);
+            DirectoryChecksum<ulong> directoryChecksum =
+                await DirectoryChecksum<ulong>
+                    .CreateDirectoryChecksum(folder, hashProvider, fileChecksumMode, [".vs"]);
 
-            DirectoryChecksumTable<ulong> table2 = await DirectoryChecksumTable<ulong>.DeserializeAsync(bytes);
+            using MemoryStream ms = new();
+            await directoryChecksum.SerializeAsync(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            DirectoryChecksum<ulong> directoryChecksumDeserialized =
+                await DirectoryChecksum<ulong>
+                    .DeserializeAsync(ms);
+
+            Assert.Equivalent(directoryChecksum.FileChecksumList, directoryChecksumDeserialized.FileChecksumList);
         }
 
         [Fact]
@@ -37,12 +44,12 @@ namespace PathsSyncronizer.Test
             bool isRemovableDrive = IsRemovableDrive(filePath1);
             int chucksBufferSize = isRemovableDrive ? 4096 : 1048576;
 
-            ulong fileSystemHash = await FinalHashFileByChuncksAsync(filePath1, chucksBufferSize).ConfigureAwait(false);
+            ulong fileSystemHash = await FinalHashFileByChuncksAsync(filePath1, chucksBufferSize);
 
             isRemovableDrive = IsRemovableDrive(filePath2);
             chucksBufferSize = isRemovableDrive ? 4096 : 1048576;
 
-            ulong removableDriveHash = await FinalHashFileByChuncksAsync(filePath2, chucksBufferSize).ConfigureAwait(false);
+            ulong removableDriveHash = await FinalHashFileByChuncksAsync(filePath2, chucksBufferSize);
 
             Assert.Equal(fileSystemHash, removableDriveHash);
         }
