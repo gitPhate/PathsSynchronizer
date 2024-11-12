@@ -92,7 +92,7 @@ namespace PathsSynchronizer.Core.Checksum
 
             var files =
                 IOHelper
-                    .EnumerateFiles(dirPath, x => !(dirNamesToExclude ?? []).Any(z => x.Contains(z)), "*");
+                    .EnumerateFiles(dirPath, x => !(dirNamesToExclude ?? []).Any(z => x.Contains(z, StringComparison.OrdinalIgnoreCase)), "*");
 
             List<FileChecksum<T>> list = [];
 
