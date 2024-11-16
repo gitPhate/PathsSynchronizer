@@ -2,6 +2,7 @@ using FluentAssertions;
 using K4os.Hash.xxHash;
 using PathsSynchronizer.Core.Checksum;
 using PathsSynchronizer.Core.Hashing;
+using PathsSynchronizer.Core.Support.IO;
 using PathsSynchronizer.Core.XXHash;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -228,6 +229,25 @@ namespace PathsSyncronizer.Test
             using SHA256 sha256 = SHA256.Create();
             byte[] hashBytes = sha256.ComputeHash(fileStream);
             string hash = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
+        }
+
+        [Fact]
+        public static void TestSandbox()
+        {
+            string[] dirNamesToExclude = ["Defender"];
+
+            var files =
+                IOHelper.EnumerateFiles(@"C:\Program Files", x => !(dirNamesToExclude ?? []).Any(z => x.Contains(z, StringComparison.OrdinalIgnoreCase)), "*");
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            foreach(string f in files)
+            {
+
+            }
+
+            sw.Stop();
+            var first = sw.ElapsedMilliseconds;
         }
 
         private static async Task<ulong> HashFileOneShotAsync(string filePath)

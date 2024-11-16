@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace PathsSynchronizer.Core.Support.IO
 {
-    internal class IOHelper
+    public class IOHelper
     {
         public static IEnumerable<string> EnumerateFiles(string rootDirectory, Func<string, bool> directoryFilter, string filePattern)
         {
@@ -16,7 +16,7 @@ namespace PathsSynchronizer.Core.Support.IO
 
             var matchedDirectories =
                 Directory
-                    .EnumerateDirectories(rootDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                    .EnumerateDirectories(rootDirectory, "*", SearchOption.TopDirectoryOnly)
                     .Where(directoryFilter);
 
             foreach (string? dir in matchedDirectories)
