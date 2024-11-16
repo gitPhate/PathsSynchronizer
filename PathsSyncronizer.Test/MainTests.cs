@@ -37,6 +37,22 @@ namespace PathsSyncronizer.Test
         }
 
         [Fact]
+        public async Task TestDeserialization()
+        {
+            const string filePath = @"C:\temp\directory_checksum_F_disk.dat";
+
+            using FileStream fs = File.OpenRead(filePath);
+
+            DirectoryChecksum<ulong> directoryChecksum =
+                await DirectoryChecksum<ulong>
+                    .DeserializeAsync(fs);
+
+            FileChecksumGroup<ulong>[] duplicates = directoryChecksum.GetDuplicates();
+            var strList = duplicates.SelectMany(x => x.FilePathList.Select(z => $"{x.Hash} - {z}")).ToArray();
+            File.WriteAllLines(@"C:\Temp\F_disk_duplicates.txt", strList);
+        }
+
+        [Fact]
         public async Task TestHashingLargeFile()
         {
             const string filePath1 = @"C:\Users\ServiceAccount\Desktop\300.avi";

@@ -11,26 +11,29 @@ using System.Threading.Tasks;
 namespace PathsSynchronizer.Core.Checksum
 {
     public enum FileChecksumMode { FileName, FileHash }
+
     public record FileChecksum<T>(string FilePath, T Hash) where T : notnull
     {
         public override int GetHashCode() => Hash.GetHashCode() ^ 16777619;
 
         public virtual bool Equals(FileChecksum<T>? obj) => obj != null && Hash.Equals(obj.Hash);
     }
+
+    public record FileChecksumGroup<T>(T Hash, string[] FilePathList) where T : notnull
+    {
+        public override int GetHashCode() => Hash.GetHashCode() ^ 16777619;
+
+        public virtual bool Equals(FileChecksum<T>? obj) => obj != null && Hash.Equals(obj.Hash);
+    }
+
     public record DirectoryChecksumModel<T>(FileChecksum<T>[] FileChecksumList, string DirectoryPath, FileChecksumMode Mode) where T : notnull;
 
-    public class DirectoryChecksum<T> where T : notnull
+    public class DirectoryChecksum<T>(string directoryPath, FileChecksum<T>[] fileChecksumList, FileChecksumMode mode)
+        where T : notnull
     {
-        public FileChecksum<T>[] FileChecksumList { get; }
-        public string DirectoryPath { get; }
-        public FileChecksumMode Mode { get; }
-
-        public DirectoryChecksum(string directoryPath, FileChecksum<T>[] fileChecksumList, FileChecksumMode mode)
-        {
-            DirectoryPath = directoryPath;
-            FileChecksumList = fileChecksumList;
-            Mode = mode;
-        }
+        public FileChecksum<T>[] FileChecksumList { get; } = fileChecksumList;
+        public string DirectoryPath { get; } = directoryPath;
+        public FileChecksumMode Mode { get; } = mode;
 
         private DirectoryChecksum(DirectoryChecksumModel<T> model)
             : this(model.DirectoryPath, model.FileChecksumList, model.Mode)
@@ -104,6 +107,18 @@ namespace PathsSynchronizer.Core.Checksum
             }
 
             return new DirectoryChecksum<T>(dirPath, list.ToArray(), fileChecksumMode);
+        }
+
+        public FileChecksumGroup<T>[] GetDuplicates()
+        {
+            FileChecksumGroup<T>[] duplicates =
+                FileChecksumList
+                    .GroupBy(x => x.Hash)
+                    .Where(x => x.Count() > 1)
+                    .Select(x => new FileChecksumGroup<T>(x.Key, x.Select(x => x.FilePath).ToArray()))
+                    .ToArray();
+
+            return duplicates;
         }
     }
 }
