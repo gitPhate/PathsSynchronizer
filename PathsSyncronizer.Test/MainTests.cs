@@ -85,7 +85,7 @@ namespace PathsSyncronizer.Test
 
         class Item
         {
-            public byte[] Buffer { get; set; }
+            public byte[]? Buffer { get; set; }
             public int Length { get; set; }
         }
 
@@ -204,14 +204,14 @@ namespace PathsSyncronizer.Test
         }
 
         [Fact]
-        public static string ComputeSHA256Hash()
+        public static void ComputeSHA256Hash()
         {
             const string filePath = @"E:\Film\300.avi";
             using FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
             //using BufferedStream bufferedStream = new BufferedStream(fileStream, 1024 * 256);
             using SHA256 sha256 = SHA256.Create();
-            byte[] hash = sha256.ComputeHash(fileStream);
-            return BitConverter.ToString(hash).Replace("-", string.Empty);
+            byte[] hashBytes = sha256.ComputeHash(fileStream);
+            string hash = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
         }
 
         private static async Task<ulong> HashFileOneShotAsync(string filePath)
@@ -224,6 +224,8 @@ namespace PathsSyncronizer.Test
             ulong oneShotFileHash = XXH64.DigestOf(allFile, 0, allFile.Length);
             return oneShotFileHash;
         }
+
+#pragma warning disable CA1416
 
         private static bool IsRemovableDrive(string path)
         {
@@ -250,7 +252,7 @@ namespace PathsSyncronizer.Test
                             continue;
                         }
 
-                        DriveInfo? drive = drives.FirstOrDefault(x => x.Name.StartsWith(logicalDisk["Name"] as string, StringComparison.OrdinalIgnoreCase));
+                        DriveInfo? drive = drives.FirstOrDefault(x => x.Name.StartsWith(logicalDisk["Name"] as string ?? string.Empty, StringComparison.OrdinalIgnoreCase));
                         if (drive is null)
                         {
                             continue;
@@ -268,5 +270,7 @@ namespace PathsSyncronizer.Test
 
             return false;
         }
+
+#pragma warning restore CA1416
     }
 }
