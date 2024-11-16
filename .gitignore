@@ -112,7 +112,7 @@ UpgradeLog*.htm
 #RiderC#
 .idea/
 *.*.iml
-Fashion-Customers/PA/Dev/Wmx.PAIEWeb/Wmx.PAIEWeb/log.txt
+
 *.dll
 !/RequiredPackages/*.dll
 
