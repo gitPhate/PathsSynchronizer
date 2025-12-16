@@ -3,10 +3,12 @@ using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PathsSynchronizer.Core.Hashing
+namespace PathsSynchronizer.Hashing
 {
     public interface IHash : IEquatable<IHash>
     {
+        public byte[] Bytes { get; }
+        public string Hash { get; }
     }
 
     public class FileHash

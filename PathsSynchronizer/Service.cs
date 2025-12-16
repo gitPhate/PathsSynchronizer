@@ -1,4 +1,4 @@
-﻿using PathsSynchronizer.Core.Hashing;
+﻿using PathsSynchronizer.Hashing;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -9,16 +9,16 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace PathsSynchronizer.Core
+namespace PathsSynchronizer
 {
     public record ServiceOptions(int SampleCount, int SampleBlockSize, long FullHashThreshold, int ProducerChannelCapacity, int WorkerCount, int IOConcurrency)
     {
         public static ServiceOptions Default => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 4096, Environment.ProcessorCount, 32);
     }
 
-    internal class Service(ServiceOptions options, IHashProvider hashProvider)
+    public class Service(ServiceOptions options, IHashProvider hashProvider)
     {
-        public async Task<IReadOnlyDictionary<string, FileHash>> ScanAsync(string rootPath, CancellationToken cancellationToken)
+        public async Task<IReadOnlyDictionary<string, FileHash>> ScanDirectoryAndHashAsync(string rootPath, CancellationToken cancellationToken = default)
         {
             ConcurrentDictionary<string, FileHash> index = new();
 
@@ -53,13 +53,62 @@ namespace PathsSynchronizer.Core
             {
                 while (reader.TryRead(out FileTask task))
                 {
+                    FileHash? fileHash = await HashFileAsync(task, bufferPool, ioSemaphore, cancellationToken).ConfigureAwait(false);
+                    if (fileHash is null)
+                    {
+                        continue;
+                    }
+
+                    index.TryAdd(task.Path, fileHash);
+                }
+            }
+        }
+
+        public async Task<FileHash> HashFileAsync(string path)
+        {
+            MemoryPool<byte> bufferPool = MemoryPool<byte>.Shared;
+            using SemaphoreSlim ioSemaphore = new(1);
+            FileHash? hash = await HashFileAsync(GetFileTask(path), bufferPool, ioSemaphore, default).ConfigureAwait(false);
+            return hash!;
+        }
+
+        private async Task<FileHash?> HashFileAsync(FileTask task, MemoryPool<byte> bufferPool, SemaphoreSlim ioSemaphore, CancellationToken cancellationToken)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                FileHash fileHash;
+
+                if (task.Length <= options.FullHashThreshold)
+                {
+                    await ioSemaphore
+                        .WaitAsync(cancellationToken)
+                        .ConfigureAwait(false);
+
                     try
+                    {
+                        fileHash =
+                            await hashProvider
+                                .HashFileAsync(task.Path, bufferPool, cancellationToken)
+                                .ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        ioSemaphore.Release();
+                    }
+                }
+                else
+                {
+                    // Large file: compute sampled hashes
+                    IHash[] sampleHashes = new IHash[options.SampleCount];
+                    var sampleTasks = Enumerable.Range(0, options.SampleCount).Select(async i =>
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        FileHash fileHash;
-
-                        if (task.Length <= options.FullHashThreshold)
+                        long offset = ComputeOffset(i, options.SampleCount, task.Length);
+                        IMemoryOwner<byte> buf = bufferPool.Rent(options.SampleBlockSize);
+                        try
                         {
                             await ioSemaphore
                                 .WaitAsync(cancellationToken)
@@ -67,9 +116,19 @@ namespace PathsSynchronizer.Core
 
                             try
                             {
-                                fileHash =
+                                Memory<byte> buffer = buf.Memory;
+                                using FileStream fs = new(task.Path, FileMode.Open, FileAccess.Read, FileShare.Read, options.SampleBlockSize, useAsync: true);
+                                fs.Seek(offset, SeekOrigin.Begin);
+                                int read = await fs.ReadAsync(buf.Memory, cancellationToken).ConfigureAwait(false);
+
+                                if (read < options.SampleBlockSize)
+                                {
+                                    buffer = buf.Memory.Slice(0, read);
+                                }
+
+                                sampleHashes[i] =
                                     await hashProvider
-                                        .HashFileAsync(task.Path, bufferPool, cancellationToken)
+                                        .HashMemoryAsync(buffer, cancellationToken)
                                         .ConfigureAwait(false);
                             }
                             finally
@@ -77,62 +136,23 @@ namespace PathsSynchronizer.Core
                                 ioSemaphore.Release();
                             }
                         }
-                        else
+                        finally
                         {
-                            // Large file: compute sampled hashes
-                            IHash[] sampleHashes = new IHash[options.SampleCount];
-                            var sampleTasks = Enumerable.Range(0, options.SampleCount).Select(async i =>
-                            {
-                                cancellationToken.ThrowIfCancellationRequested();
-
-                                long offset = ComputeOffset(i, options.SampleCount, task.Length);
-                                IMemoryOwner<byte> buf = bufferPool.Rent(options.SampleBlockSize);
-                                try
-                                {
-                                    await ioSemaphore
-                                        .WaitAsync(cancellationToken)
-                                        .ConfigureAwait(false);
-
-                                    try
-                                    {
-                                        Memory<byte> buffer = buf.Memory;
-                                        using FileStream fs = new(task.Path, FileMode.Open, FileAccess.Read, FileShare.Read, options.SampleBlockSize, useAsync: true);
-                                        fs.Seek(offset, SeekOrigin.Begin);
-                                        int read = await fs.ReadAsync(buf.Memory, cancellationToken).ConfigureAwait(false);
-
-                                        if (read < options.SampleBlockSize)
-                                        {
-                                            buffer = buf.Memory.Slice(0, read);
-                                        }
-
-                                        sampleHashes[i] =
-                                            await hashProvider
-                                                .HashMemoryAsync(buffer, cancellationToken)
-                                                .ConfigureAwait(false);
-                                    }
-                                    finally
-                                    {
-                                        ioSemaphore.Release();
-                                    }
-                                }
-                                finally
-                                {
-                                    buf.Dispose();
-                                }
-                            })
-                            .ToArray();
-
-                            await Task.WhenAll(sampleTasks).ConfigureAwait(false);
-
-                            fileHash = new FileHash(sampleHashes);
+                            buf.Dispose();
                         }
+                    })
+                    .ToArray();
 
-                        index.TryAdd(task.Path, fileHash);
-                    }
-                    catch (OperationCanceledException) { return; }
+                    await Task.WhenAll(sampleTasks).ConfigureAwait(false);
+
+                    fileHash = new FileHash(sampleHashes);
                 }
+
+                return fileHash;
             }
+            catch (OperationCanceledException) { return null; }
         }
+
 
         private long ComputeOffset(int index, int total, long fileSize)
         {
@@ -148,11 +168,15 @@ namespace PathsSynchronizer.Core
                 foreach (string path in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var fi = new FileInfo(path);
-                    await writer.WriteAsync(new FileTask(path, fi.Length), cancellationToken).ConfigureAwait(false);
+                    await writer.WriteAsync(GetFileTask(path), cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) { }
+        }
+
+        private static FileTask GetFileTask(string path)
+        {
+            return new FileTask(path, new FileInfo(path).Length);
         }
     }
 

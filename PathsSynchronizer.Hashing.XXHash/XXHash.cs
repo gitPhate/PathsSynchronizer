@@ -1,10 +1,9 @@
-﻿using PathsSynchronizer.Core.Hashing;
-
-namespace PathsSynchronizer.Hashing.XXHash
+﻿namespace PathsSynchronizer.Hashing.XXHash
 {
     public readonly struct XXHash(byte[] bytes) : IHash
     {
         public byte[] Bytes { get; } = bytes;
+        public string Hash => Convert.ToHexString(Bytes);
 
         public bool Equals(IHash? other)
         {

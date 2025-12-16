@@ -1,10 +1,9 @@
-﻿using PathsSynchronizer.Core.Hashing;
-using System.Buffers;
+﻿using System.Buffers;
 using System.IO.Hashing;
 
 namespace PathsSynchronizer.Hashing.XXHash
 {
-    internal class XXHashProvider : IHashProvider
+    public class XXHashProvider : IHashProvider
     {
         public async ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, CancellationToken cancellationToken = default)
         {
