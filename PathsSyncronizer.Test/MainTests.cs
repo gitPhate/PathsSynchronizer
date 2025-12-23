@@ -2,17 +2,18 @@
 using PathsSynchronizer;
 using PathsSynchronizer.Hashing;
 using PathsSynchronizer.Hashing.XXHash;
-using System.Data.SqlTypes;
 
 namespace PathsSyncronizer.Test
 {
     public class MainTests
     {
+        private static readonly IHashProvider _hashProvider = new XXHashProvider();
+
         [Fact]
         public static async Task TestSingleFile()
         {
             const string fileName = "testfile.txt";
-            HashService service = new(ServiceOptions.Default, new XXHashProvider());
+            HashService service = new(ServiceOptions.Default, _hashProvider);
 
             File.WriteAllText(fileName, "test");
 
@@ -32,7 +33,7 @@ namespace PathsSyncronizer.Test
         [Fact]
         public static async Task TestDirectoryScan()
         {
-            HashService service = new(ServiceOptions.Default, new XXHashProvider());
+            HashService service = new(ServiceOptions.Default, _hashProvider);
             DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"C:\Temp");
             result.Files.Should().HaveCountGreaterThan(0);
         }
@@ -42,7 +43,7 @@ namespace PathsSyncronizer.Test
         {
             const string fileName = "scan.dat";
 
-            HashService service = new(ServiceOptions.Default, new XXHashProvider());
+            HashService service = new(ServiceOptions.Default, _hashProvider);
             DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"C:\UX");
 
             try

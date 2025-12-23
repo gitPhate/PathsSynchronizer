@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PathsSynchronizer.Hashing.XXHash\PathsSynchronizer.Hashing.XXHash.csproj" />
+    <ProjectReference Include="..\PathsSynchronizer.MurmurHash\PathsSynchronizer.MurmurHash.csproj" />
     <ProjectReference Include="..\PathsSynchronizer\PathsSynchronizer.csproj" />
   </ItemGroup>
 
