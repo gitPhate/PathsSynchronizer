@@ -93,10 +93,10 @@ static async Task renderProgressAsync(
 
         Console.SetCursorPosition(0, startLine);
 
-        Console.WriteLine($"Files discovered : {last.FilesRead}");
-        Console.WriteLine($"Files hashed     : {last.FilesHashed}");
-        Console.WriteLine($"Bytes hashed     : {formatBytes(last.BytesHashed)}");
-        Console.WriteLine($"Elapsed time     : {formatElapsed(elapsed)}");
+        Console.WriteLine($"Files discovered : {last.FilesRead}      ");
+        Console.WriteLine($"Files hashed     : {last.FilesHashed}      ");
+        Console.WriteLine($"Bytes hashed     : {formatBytes(last.BytesHashed)}      ");
+        Console.WriteLine($"Elapsed time     : {formatElapsed(elapsed)}      ");
         Console.WriteLine($"Speed            : {mbPerSecond:0.00} MB/s      ");
         Console.WriteLine($"Status           : Running...           ");
     }
