@@ -2,7 +2,6 @@
 using PathsSynchronizer;
 using PathsSynchronizer.Hashing;
 using PathsSynchronizer.Hashing.XXHash;
-using System.Data.SqlTypes;
 
 namespace PathsSyncronizer.Test
 {
@@ -33,7 +32,10 @@ namespace PathsSyncronizer.Test
         public static async Task TestDirectoryScan()
         {
             HashService service = new(ServiceOptions.Default, new XXHashProvider());
-            DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"C:\Temp");
+            HashProgress progressDetails = default;
+            Progress<HashProgress> progress = new(p => progressDetails = p);
+
+            DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"C:\Temp\pictures\missing", progress);
             result.Files.Should().HaveCountGreaterThan(0);
         }
 
@@ -58,6 +60,16 @@ namespace PathsSyncronizer.Test
                     File.Delete(fileName);
                 }
             }
+        }
+
+        [Fact]
+        public static async Task TestDirectoryScanAndStore()
+        {
+            const string filePath = @"C:\temp\scan.dat";
+
+            HashService service = new(ServiceOptions.Default, new XXHashProvider());
+            DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"E:\Foto");
+            await StorageService.StoreDirectoryHashAsync(result, filePath);
         }
     }
 }

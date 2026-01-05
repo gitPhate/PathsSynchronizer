@@ -1,6 +1,5 @@
 ﻿using PathsSynchronizer.Hashing;
 using System;
-using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace PathsSynchronizer
@@ -60,4 +59,6 @@ namespace PathsSynchronizer
             }
         }
     }
+
+    public readonly record struct HashProgress(int FilesRead, int FilesHashed, long BytesHashed);
 }

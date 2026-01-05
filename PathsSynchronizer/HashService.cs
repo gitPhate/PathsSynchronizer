@@ -12,9 +12,21 @@ namespace PathsSynchronizer
 {
     public class HashService(ServiceOptions options, IHashProvider hashProvider)
     {
-        public async Task<DirectoryHash> ScanDirectoryAndHashAsync(string rootPath, CancellationToken cancellationToken = default)
+        public async Task<DirectoryHash> ScanDirectoryAndHashAsync(string rootPath, IProgress<HashProgress>? progress = null, CancellationToken cancellationToken = default)
         {
             ConcurrentBag<FileHash> index = [];
+            int filesHashed = 0;
+            int filesRead = 0;
+            long bytesHashed = 0;
+
+            void reportProgress()
+            {
+                progress?.Report(new HashProgress(
+                    Volatile.Read(ref filesHashed),
+                    Volatile.Read(ref filesRead),
+                    Volatile.Read(ref bytesHashed)
+                ));
+            }
 
             Channel<FileTask> channel =
                 Channel
@@ -30,17 +42,43 @@ namespace PathsSynchronizer
             Task[] workers =
                 Enumerable
                     .Range(0, options.WorkerCount)
-                    .Select(_ => ConsumerWorkerAsync(channel.Reader, ioSemaphore, index, cancellationToken))
+                    .Select(_ => 
+                        ConsumerWorkerAsync
+                        (
+                            channel.Reader,
+                            ioSemaphore,
+                            index,
+                            x =>
+                            {
+                                Interlocked.Increment(ref filesHashed);
+                                Interlocked.Add(ref bytesHashed, x);
+                                reportProgress();
+                            },
+                            cancellationToken
+                        )
+                    )
                     .ToArray();
 
-            await ProducerAsync(rootPath, channel.Writer, cancellationToken).ConfigureAwait(false);
+            await ProducerAsync
+            (
+                rootPath,
+                channel.Writer,
+                x =>
+                {
+                    Interlocked.Increment(ref filesRead);
+                    reportProgress();
+                },
+                cancellationToken
+            )
+            .ConfigureAwait(false);
+            
             channel.Writer.Complete();
             await Task.WhenAll(workers).ConfigureAwait(false);
 
             return new DirectoryHash(rootPath, index.ToArray());
         }
 
-        private async Task ConsumerWorkerAsync(ChannelReader<FileTask> reader, SemaphoreSlim ioSemaphore, ConcurrentBag<FileHash> index, CancellationToken cancellationToken)
+        private async Task ConsumerWorkerAsync(ChannelReader<FileTask> reader, SemaphoreSlim ioSemaphore, ConcurrentBag<FileHash> index, Action<long>? onFileHashed, CancellationToken cancellationToken)
         {
             MemoryPool<byte> bufferPool = MemoryPool<byte>.Shared;
 
@@ -156,14 +194,18 @@ namespace PathsSynchronizer
             return (long)(fraction * Math.Max(0, fileSize - options.SampleBlockSize));
         }
 
-        private static async Task ProducerAsync(string rootPath, ChannelWriter<FileTask> writer, CancellationToken cancellationToken)
+        private static async Task ProducerAsync(string rootPath, ChannelWriter<FileTask> writer, Action<long>? onFileDiscovered, CancellationToken cancellationToken)
         {
             try
             {
                 foreach (string path in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    await writer.WriteAsync(GetFileTask(path), cancellationToken).ConfigureAwait(false);
+
+                    FileTask fileTask = GetFileTask(path);
+                    onFileDiscovered?.Invoke(fileTask.Length);
+
+                    await writer.WriteAsync(fileTask, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) { }
