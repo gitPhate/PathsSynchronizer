@@ -77,7 +77,7 @@ namespace PathsSynchronizer.Hashing
                 }
             }
 
-            return (FilePath ?? string.Empty).Equals(other.FilePath);
+            return true;
         }
 
         public override int GetHashCode()
@@ -95,7 +95,7 @@ namespace PathsSynchronizer.Hashing
                     }
                 }
 
-                return hash ^ (FilePath ?? string.Empty).GetHashCode();
+                return hash;
             }
         }
     }
