@@ -9,8 +9,8 @@ namespace PathsSynchronizer
 
     public record ServiceOptions(int SampleCount, int SampleBlockSize, long FullHashThreshold, int ProducerChannelCapacity, int WorkerCount, int IOConcurrency)
     {
-        public static ServiceOptions SSD => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 4096, Environment.ProcessorCount * 2, 128);
-        public static ServiceOptions ExternalHDD => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 4096, Environment.ProcessorCount, 32);
+        public static ServiceOptions SSD => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 4096, Environment.ProcessorCount, 32);
+        public static ServiceOptions ExternalHDD => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 4096, Environment.ProcessorCount, 16);
     }
 
     [method: JsonConstructor]
