@@ -93,6 +93,7 @@ namespace PathsSynchronizer
                     }
 
                     index.Add(fileHash);
+                    onFileHashed?.Invoke(task.Length);
                 }
             }
         }
