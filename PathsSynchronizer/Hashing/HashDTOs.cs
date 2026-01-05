@@ -8,6 +8,8 @@ namespace PathsSynchronizer.Hashing
     public readonly struct DataHash(byte[] bytes)
     {
         public byte[] Bytes { get; } = bytes;
+
+        [JsonIgnore]
         public string Hash => Convert.ToHexString(Bytes);
 
         public bool Equals(DataHash other)
