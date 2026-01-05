@@ -1,5 +1,6 @@
 ﻿using PathsSynchronizer.Hashing;
 using System;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace PathsSynchronizer
@@ -18,28 +19,10 @@ namespace PathsSynchronizer
         public string Path { get; set; } = path;
         public FileHash[] Files { get; set; } = files;
 
-        public override bool Equals(object? obj)
-        {
-            if (obj is null || obj is not DirectoryHash other)
-            {
-                return false;
-            }
-
-            if(!(Path ?? string.Empty).Equals(other.Path))
-            {
-                return false;
-            }
-
-            for (int i = 0; i < Files.Length; ++i)
-            {
-                if (!Files[i].Equals(other.Files[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        public override bool Equals(object? obj) =>
+            obj is DirectoryHash other
+                && (Path ?? string.Empty).Equals(other.Path)
+                && Files.SequenceEqual(other.Files);
 
         public override int GetHashCode()
         {

@@ -12,16 +12,7 @@ namespace PathsSynchronizer.Hashing
         [JsonIgnore]
         public string Hash => Convert.ToHexString(Bytes);
 
-        public bool Equals(DataHash other)
-        {
-            if (ReferenceEquals(Bytes, other.Bytes)) return true; // same array
-            if (Bytes.Length != other.Bytes.Length) return false;
-
-            for (int i = 0; i < Bytes.Length; ++i)
-                if (Bytes[i] != other.Bytes[i]) return false;
-
-            return true;
-        }
+        public bool Equals(DataHash other) => Bytes.SequenceEqual(other.Bytes);
 
         public override bool Equals(object? obj) => obj is DataHash xx && Equals(xx);
 
@@ -34,8 +25,9 @@ namespace PathsSynchronizer.Hashing
                 const int p = 16777619;
                 int hash = (int)2166136261;
 
-                for (int i = 0; i < Bytes.Length; i++)
-                    hash = (hash ^ Bytes[i]) * p;
+                ReadOnlySpan<byte> span = Bytes.AsSpan();
+                for (int i = 0; i < span.Length; i++)
+                    hash = (hash ^ span[i]) * p;
 
                 return hash;
             }
@@ -57,28 +49,8 @@ namespace PathsSynchronizer.Hashing
         {
         }
 
-        public override bool Equals(object? obj)
-        {
-            if (obj is null || obj is not FileHash other)
-            {
-                return false;
-            }
-
-            if (Hashes.Length != other.Hashes.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < Hashes.Length; ++i)
-            {
-                if (!Hashes[i].Equals(other.Hashes[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        public override bool Equals(object? obj) =>
+            obj is FileHash other && Hashes.SequenceEqual(other.Hashes);
 
         public override int GetHashCode()
         {
@@ -98,5 +70,9 @@ namespace PathsSynchronizer.Hashing
                 return hash;
             }
         }
+
+        public static bool operator ==(FileHash left, FileHash right) => left.Equals(right);
+
+        public static bool operator !=(FileHash left, FileHash right) => !(left == right);
     }
 }
