@@ -13,7 +13,7 @@ namespace PathsSyncronizer.Test
         public static async Task TestSingleFile()
         {
             const string fileName = "testfile.txt";
-            HashService service = new(ServiceOptions.Default, _hashProvider);
+            HashService service = new(ServiceOptions.ExternalHDD, _hashProvider);
 
             File.WriteAllText(fileName, "test");
 
@@ -33,7 +33,7 @@ namespace PathsSyncronizer.Test
         [Fact]
         public static async Task TestDirectoryScan()
         {
-            HashService service = new(ServiceOptions.Default, _hashProvider);
+            HashService service = new(ServiceOptions.ExternalHDD, _hashProvider);
             HashProgress progressDetails = default;
             Progress<HashProgress> progress = new(p => progressDetails = p);
 
@@ -46,7 +46,7 @@ namespace PathsSyncronizer.Test
         {
             const string fileName = "scan.dat";
 
-            HashService service = new(ServiceOptions.Default, _hashProvider);
+            HashService service = new(ServiceOptions.ExternalHDD, _hashProvider);
             DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"C:\UX");
 
             try
@@ -69,7 +69,7 @@ namespace PathsSyncronizer.Test
         {
             const string filePath = @"C:\temp\scan.dat";
 
-            HashService service = new(ServiceOptions.Default, new XXHashProvider());
+            HashService service = new(ServiceOptions.ExternalHDD, new XXHashProvider());
             DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"E:\Foto");
             await StorageService.StoreDirectoryHashAsync(result, filePath);
         }
