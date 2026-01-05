@@ -12,22 +12,13 @@ namespace PathsSyncronizer.Test
         [Fact]
         public static async Task TestSingleFile()
         {
-            const string fileName = "testfile.txt";
+            const string fileName = @"C:\Users\gabriele.ricci\Downloads\ArkOS_RG351MP_v2.0_12242024.img.xz";
             HashService service = new(ServiceOptions.ExternalHDD, _hashProvider);
 
-            File.WriteAllText(fileName, "test");
+            FileHash results = await service.HashFileAsync(fileName);
+            FileHash results2 = await service.HashFileAsync(fileName);
 
-            try
-            {
-                FileHash results = await service.HashFileAsync(fileName);
-                FileHash results2 = await service.HashFileAsync(fileName);
-
-                results.Should().Be(results2);
-            }
-            finally
-            {
-                File.Delete(fileName);
-            }
+            results.Should().Be(results2);
         }
 
         [Fact]

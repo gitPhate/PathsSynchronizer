@@ -1,4 +1,5 @@
-﻿using PathsSynchronizer.Hashing;
+﻿using Microsoft.Win32.SafeHandles;
+using PathsSynchronizer.Hashing;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -136,6 +137,9 @@ namespace PathsSynchronizer
                 {
                     // Large file: compute sampled hashes
                     DataHash[] sampleHashes = new DataHash[options.SampleCount];
+                    using FileStream fs = new(task.Path, FileMode.Open, FileAccess.Read, FileShare.Read, options.SampleBlockSize, useAsync: true);
+                    SafeFileHandle handle = fs.SafeFileHandle;
+
                     var sampleTasks = Enumerable.Range(0, options.SampleCount).Select(async i =>
                     {
                         cancellationToken.ThrowIfCancellationRequested();
@@ -151,9 +155,7 @@ namespace PathsSynchronizer
                             try
                             {
                                 Memory<byte> buffer = buf.Memory;
-                                using FileStream fs = new(task.Path, FileMode.Open, FileAccess.Read, FileShare.Read, options.SampleBlockSize, useAsync: true);
-                                fs.Seek(offset, SeekOrigin.Begin);
-                                int read = await fs.ReadAsync(buf.Memory, cancellationToken).ConfigureAwait(false);
+                                int read = await RandomAccess.ReadAsync(handle, buf.Memory, offset, cancellationToken).ConfigureAwait(false);
 
                                 if (read < options.SampleBlockSize)
                                 {
