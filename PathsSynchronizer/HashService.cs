@@ -22,8 +22,8 @@ namespace PathsSynchronizer
             void reportProgress()
             {
                 progress?.Report(new HashProgress(
-                    Volatile.Read(ref filesHashed),
                     Volatile.Read(ref filesRead),
+                    Volatile.Read(ref filesHashed),
                     Volatile.Read(ref bytesHashed)
                 ));
             }
