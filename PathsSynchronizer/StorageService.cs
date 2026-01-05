@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PathsSynchronizer
 {
-    public class StorageService
+    public static class StorageService
     {
         public static async Task StoreDirectoryHashAsync(DirectoryHash directoryHash, string filePath)
         {

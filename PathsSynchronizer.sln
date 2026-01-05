@@ -9,7 +9,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer", "PathsS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer.Hashing.XXHash", "PathsSynchronizer.Hashing.XXHash\PathsSynchronizer.Hashing.XXHash.csproj", "{39F10BF0-435E-4073-94CD-C291C18FF07F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer.MurmurHash", "PathsSynchronizer.MurmurHash\PathsSynchronizer.MurmurHash.csproj", "{8ED0059B-5129-46D1-8BFA-5CCC95A295A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer.MurmurHash", "PathsSynchronizer.MurmurHash\PathsSynchronizer.MurmurHash.csproj", "{043D5B35-8F42-947C-75D3-5DDED7831A52}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSyncronizer.Console", "PathsSyncronizer.Console\PathsSyncronizer.Console.csproj", "{1A7A3901-83F6-FE66-DD0B-7B59154FCEB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +31,14 @@ Global
 		{39F10BF0-435E-4073-94CD-C291C18FF07F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{39F10BF0-435E-4073-94CD-C291C18FF07F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{39F10BF0-435E-4073-94CD-C291C18FF07F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8ED0059B-5129-46D1-8BFA-5CCC95A295A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8ED0059B-5129-46D1-8BFA-5CCC95A295A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8ED0059B-5129-46D1-8BFA-5CCC95A295A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8ED0059B-5129-46D1-8BFA-5CCC95A295A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{043D5B35-8F42-947C-75D3-5DDED7831A52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{043D5B35-8F42-947C-75D3-5DDED7831A52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{043D5B35-8F42-947C-75D3-5DDED7831A52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{043D5B35-8F42-947C-75D3-5DDED7831A52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A7A3901-83F6-FE66-DD0B-7B59154FCEB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A7A3901-83F6-FE66-DD0B-7B59154FCEB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A7A3901-83F6-FE66-DD0B-7B59154FCEB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A7A3901-83F6-FE66-DD0B-7B59154FCEB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
