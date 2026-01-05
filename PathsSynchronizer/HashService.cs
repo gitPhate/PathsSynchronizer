@@ -21,11 +21,11 @@ namespace PathsSynchronizer
 
             void reportProgress()
             {
-                progress?.Report(new HashProgress(
-                    Volatile.Read(ref filesRead),
-                    Volatile.Read(ref filesHashed),
-                    Volatile.Read(ref bytesHashed)
-                ));
+                int read = Volatile.Read(ref filesRead);
+                int hashed = Volatile.Read(ref filesHashed);
+                long bytes = Volatile.Read(ref bytesHashed);
+
+                progress?.Report(new HashProgress(read, hashed, bytes));
             }
 
             Channel<FileTask> channel =
