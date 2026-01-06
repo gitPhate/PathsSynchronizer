@@ -201,7 +201,7 @@ namespace PathsSynchronizer
         {
             try
             {
-                foreach (string path in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories).OrderBy(x => x))
+                foreach (string path in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
