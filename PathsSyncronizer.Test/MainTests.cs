@@ -2,6 +2,7 @@
 using PathsSynchronizer;
 using PathsSynchronizer.Hashing;
 using PathsSynchronizer.Hashing.XXHash;
+using System.Text.Json;
 
 namespace PathsSyncronizer.Test
 {
@@ -80,7 +81,22 @@ namespace PathsSyncronizer.Test
             var missingLines = missingFiles.Select(x => x.FilePath).Distinct().ToArray();
             File.WriteAllLines("missing.txt", missingLines);
 
+            var duplicatedHashes =
+            eResult.Files
+                .GroupBy(x => x)
+                .Where(x => x.Count() > 1)
+                .Select(x => new { Hash = x.Key.Hashes.First(), Files = x.Select(x => x.FilePath).ToArray() })
+                .ToArray();
 
+            string json = JsonSerializer.Serialize(duplicatedHashes);
+
+            File.WriteAllText("duplicates.json", json);
+
+            //var duplicates =
+            //    eResult.Files
+            //    .Where(x => duplicatedHashes.Contains(x.Hashes.First()))
+            //    .Select(x => x.FilePath).Distinct()
+            //    .ToArray();
         }
     }
 }
