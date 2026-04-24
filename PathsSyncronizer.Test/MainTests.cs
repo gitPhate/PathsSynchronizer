@@ -25,11 +25,11 @@ namespace PathsSyncronizer.Test
         [Fact]
         public static async Task TestDirectoryScan()
         {
-            HashService service = new(ServiceOptions.ExternalHDD, _hashProvider);
+            HashService service = new(ServiceOptions.SSD, _hashProvider);
             HashProgress progressDetails = default;
             Progress<HashProgress> progress = new(p => progressDetails = p);
 
-            DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"C:\Development\dotnet\Kering-APEEvo", progress);
+            DirectoryHash result = await service.ScanDirectoryAndHashAsync(@"C:\Temp\APE", progress);
             result.Files.Should().HaveCountGreaterThan(0);
         }
 

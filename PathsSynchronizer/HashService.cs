@@ -114,7 +114,7 @@ namespace PathsSynchronizer
         {
             MemoryPool<byte> bufferPool = MemoryPool<byte>.Shared;
             using SemaphoreSlim ioSemaphore = new(1);
-            FileHash? hash = await HashFileAsync(GetFileTask(path), bufferPool, ioSemaphore, default).ConfigureAwait(false);
+            FileHash? hash = await HashFileAsync(new FileTask(path, new FileInfo(path).Length), bufferPool, ioSemaphore, default).ConfigureAwait(false);
             return hash!;
         }
 
@@ -212,22 +212,32 @@ namespace PathsSynchronizer
         {
             try
             {
-                foreach (string path in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories))
+                await TraverseAsync(new DirectoryInfo(rootPath)).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { }
+
+            async Task TraverseAsync(DirectoryInfo directory)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Files in THIS directory
+                foreach (var file in directory.EnumerateFiles()
+                    .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    FileTask fileTask = GetFileTask(path);
-                    onFileDiscovered?.Invoke(fileTask.Length);
+                    onFileDiscovered?.Invoke(file.Length);
 
-                    await writer.WriteAsync(fileTask, cancellationToken).ConfigureAwait(false);
+                    await writer.WriteAsync(new(file.FullName, file.Length), cancellationToken).ConfigureAwait(false);
+                }
+
+                // Subdirectories
+                foreach (var subDir in directory.EnumerateDirectories()
+                    .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    await TraverseAsync(subDir).ConfigureAwait(false);
                 }
             }
-            catch (OperationCanceledException) { }
-        }
-
-        private static FileTask GetFileTask(string path)
-        {
-            return new FileTask(path, new FileInfo(path).Length);
         }
     }
 }
