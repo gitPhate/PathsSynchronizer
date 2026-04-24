@@ -22,7 +22,7 @@ namespace PathsSynchronizer
         public override bool Equals(object? obj) =>
             obj is DirectoryHash other
                 && (Path ?? string.Empty).Equals(other.Path)
-                && Files.SequenceEqual(other.Files);
+                && Files.OrderBy(x => x.FilePath).SequenceEqual(other.Files.OrderBy(x => x.FilePath));
 
         public override int GetHashCode()
         {
