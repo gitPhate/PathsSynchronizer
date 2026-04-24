@@ -12,7 +12,7 @@ namespace PathsSynchronizer.Hashing
         [JsonIgnore]
         public string Hash => Convert.ToHexString(Bytes);
 
-        public bool Equals(DataHash other) => Bytes.SequenceEqual(other.Bytes);
+        public bool Equals(DataHash other) => (Bytes ?? Array.Empty<byte>()).SequenceEqual(other.Bytes ?? Array.Empty<byte>());
 
         public override bool Equals(object? obj) => obj is DataHash xx && Equals(xx);
 

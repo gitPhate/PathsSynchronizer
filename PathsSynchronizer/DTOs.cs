@@ -16,12 +16,12 @@ namespace PathsSynchronizer
     [method: JsonConstructor]
     public class DirectoryHash(string path, FileHash[] files)
     {
-        public string Path { get; set; } = path;
-        public FileHash[] Files { get; set; } = files;
+        public string Path { get; init; } = path;
+        public FileHash[] Files { get; init; } = files;
 
         public override bool Equals(object? obj) =>
             obj is DirectoryHash other
-                && (Path ?? string.Empty).Equals(other.Path)
+                && string.Equals(Path ?? string.Empty, other.Path ?? string.Empty, StringComparison.Ordinal)
                 && Files.OrderBy(x => x.FilePath).SequenceEqual(other.Files.OrderBy(x => x.FilePath));
 
         public override int GetHashCode()

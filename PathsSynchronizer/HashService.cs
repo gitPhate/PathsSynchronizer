@@ -110,12 +110,12 @@ namespace PathsSynchronizer
             }
         }
 
-        public async Task<FileHash> HashFileAsync(string path)
+        public async Task<FileHash> HashFileAsync(string path, CancellationToken cancellationToken = default)
         {
             MemoryPool<byte> bufferPool = MemoryPool<byte>.Shared;
             using SemaphoreSlim ioSemaphore = new(1);
-            FileHash? hash = await HashFileAsync(new FileTask(path, new FileInfo(path).Length), bufferPool, ioSemaphore, default).ConfigureAwait(false);
-            return hash!;
+            FileHash? hash = await HashFileAsync(new FileTask(path, new FileInfo(path).Length), bufferPool, ioSemaphore, cancellationToken).ConfigureAwait(false);
+            return hash ?? throw new OperationCanceledException(cancellationToken);
         }
 
         private async Task<FileHash?> HashFileAsync(FileTask task, MemoryPool<byte> bufferPool, SemaphoreSlim ioSemaphore, CancellationToken cancellationToken)
@@ -204,17 +204,14 @@ namespace PathsSynchronizer
         private long ComputeOffset(int index, int total, long fileSize)
         {
             if (fileSize <= options.SampleBlockSize) return 0;
+            if (total <= 1) return 0;
             double fraction = (double)index / (total - 1);
             return (long)(fraction * Math.Max(0, fileSize - options.SampleBlockSize));
         }
 
         private static async Task ProducerAsync(string rootPath, ChannelWriter<FileTask> writer, Action<long>? onFileDiscovered, CancellationToken cancellationToken)
         {
-            try
-            {
-                await TraverseAsync(new DirectoryInfo(rootPath)).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) { }
+            await TraverseAsync(new DirectoryInfo(rootPath)).ConfigureAwait(false);
 
             async Task TraverseAsync(DirectoryInfo directory)
             {
