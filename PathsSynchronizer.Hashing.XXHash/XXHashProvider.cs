@@ -7,11 +7,21 @@ namespace PathsSynchronizer.Hashing.XXHash
     {
         public async ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, CancellationToken cancellationToken = default)
         {
-            using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 81920, // 80KB buffer
-                FileOptions.Asynchronous | FileOptions.SequentialScan);
-
             XxHash128 hasher = new();
-            await hasher.AppendAsync(fs, cancellationToken).ConfigureAwait(false);
+            using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            using IMemoryOwner<byte> rentedBuffer = pool.Rent(81920);
+
+            while (true)
+            {
+                int read = await fs.ReadAsync(rentedBuffer.Memory, cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                hasher.Append(rentedBuffer.Memory.Span.Slice(0, read));
+            }
+
             return new(path, new DataHash(hasher.GetCurrentHash())); // 16 bytes (128 bits)
         }
 

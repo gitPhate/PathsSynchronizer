@@ -13,7 +13,7 @@ namespace PathsSyncronizer.Test
         [Fact]
         public static async Task TestSingleFile()
         {
-            const string fileName = @"C:\Users\gabriele.ricci\Downloads\ArkOS_RG351MP_v2.0_12242024.img.xz";
+            const string fileName = @"C:\Temp\UninstalItems.log";
             HashService service = new(ServiceOptions.ExternalHDD, _hashProvider);
 
             FileHash results = await service.HashFileAsync(fileName);
