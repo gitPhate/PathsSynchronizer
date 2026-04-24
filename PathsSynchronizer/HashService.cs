@@ -43,7 +43,7 @@ namespace PathsSynchronizer
             Task[] workers =
                 Enumerable
                     .Range(0, options.WorkerCount)
-                    .Select(_ => 
+                    .Select(_ =>
                         ConsumerWorkerAsync
                         (
                             channel.Reader,
@@ -60,20 +60,31 @@ namespace PathsSynchronizer
                     )
                     .ToArray();
 
-            await ProducerAsync
-            (
-                rootPath,
-                channel.Writer,
-                x =>
-                {
-                    Interlocked.Increment(ref filesRead);
-                    reportProgress();
-                },
-                cancellationToken
-            )
-            .ConfigureAwait(false);
-            
-            channel.Writer.Complete();
+            Exception? producerException = null;
+            try
+            {
+                await ProducerAsync
+                (
+                    rootPath,
+                    channel.Writer,
+                    x =>
+                    {
+                        Interlocked.Increment(ref filesRead);
+                        reportProgress();
+                    },
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                producerException = ex;
+            }
+            finally
+            {
+                channel.Writer.TryComplete(producerException);
+            }
+
             await Task.WhenAll(workers).ConfigureAwait(false);
 
             return new DirectoryHash(rootPath, index.ToArray());
