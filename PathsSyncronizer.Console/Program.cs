@@ -13,7 +13,9 @@ if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
 }
 
 Channel<HashProgress> progressChannel = Channel.CreateUnbounded<HashProgress>(new UnboundedChannelOptions { SingleReader = true });
-HashService service = new(ServiceOptions.SSD, new XXHashProvider());
+ServiceOptions options = ServiceOptions.SSD;
+HashService.EnsureThreadPoolCapacity(options);
+HashService service = new(options, new XXHashProvider());
 
 Progress<HashProgress> progress = new(p =>
 {

@@ -15,6 +15,22 @@ namespace PathsSynchronizer
     public class HashService(ServiceOptions options, IHashProvider hashProvider)
     {
         private const long ProgressIntervalMs = 100;
+        private const int ThreadPoolHeadroom = 4;
+
+        /// <summary>
+        /// Raises the process-wide thread pool minimum so blocked workers do not starve other continuations.
+        /// Never lowers the current value. Call once at startup; the library never calls it on its own.
+        /// </summary>
+        public static void EnsureThreadPoolCapacity(ServiceOptions options)
+        {
+            ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);
+            int required = options.WorkerCount + ThreadPoolHeadroom;
+
+            if (workerThreads < required)
+            {
+                ThreadPool.SetMinThreads(required, completionPortThreads);
+            }
+        }
 
         public async Task<DirectoryHash> ScanDirectoryAndHashAsync(string rootPath, IProgress<HashProgress>? progress = null, CancellationToken cancellationToken = default)
         {
