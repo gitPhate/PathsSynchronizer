@@ -23,7 +23,7 @@ namespace PathsSynchronizer
             int filesRead = 0;
             long bytesHashed = 0;
 
-            Stopwatch progressClock = Stopwatch.StartNew();
+            long progressStart = Stopwatch.GetTimestamp();
             long lastReportMs = 0;
 
             void reportProgress(bool force = false)
@@ -35,7 +35,7 @@ namespace PathsSynchronizer
 
                 if (!force)
                 {
-                    long now = progressClock.ElapsedMilliseconds;
+                    long now = (long)Stopwatch.GetElapsedTime(progressStart).TotalMilliseconds;
                     long last = Volatile.Read(ref lastReportMs);
                     if (now - last < ProgressIntervalMs || Interlocked.CompareExchange(ref lastReportMs, now, last) != last)
                     {
