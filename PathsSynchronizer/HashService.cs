@@ -3,6 +3,7 @@ using PathsSynchronizer.Hashing;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -13,6 +14,8 @@ namespace PathsSynchronizer
 {
     public class HashService(ServiceOptions options, IHashProvider hashProvider)
     {
+        private const long ProgressIntervalMs = 100;
+
         public async Task<DirectoryHash> ScanDirectoryAndHashAsync(string rootPath, IProgress<HashProgress>? progress = null, CancellationToken cancellationToken = default)
         {
             ConcurrentBag<FileHash> index = [];
@@ -20,13 +23,31 @@ namespace PathsSynchronizer
             int filesRead = 0;
             long bytesHashed = 0;
 
-            void reportProgress()
+            Stopwatch progressClock = Stopwatch.StartNew();
+            long lastReportMs = 0;
+
+            void reportProgress(bool force = false)
             {
+                if (progress is null)
+                {
+                    return;
+                }
+
+                if (!force)
+                {
+                    long now = progressClock.ElapsedMilliseconds;
+                    long last = Volatile.Read(ref lastReportMs);
+                    if (now - last < ProgressIntervalMs || Interlocked.CompareExchange(ref lastReportMs, now, last) != last)
+                    {
+                        return;
+                    }
+                }
+
                 int read = Volatile.Read(ref filesRead);
                 int hashed = Volatile.Read(ref filesHashed);
                 long bytes = Volatile.Read(ref bytesHashed);
 
-                progress?.Report(new HashProgress(read, hashed, bytes));
+                progress.Report(new HashProgress(read, hashed, bytes));
             }
 
             Channel<FileTask> channel =
@@ -86,6 +107,8 @@ namespace PathsSynchronizer
             }
 
             await Task.WhenAll(workers).ConfigureAwait(false);
+
+            reportProgress(force: true);
 
             return new DirectoryHash(rootPath, index.ToArray());
         }
