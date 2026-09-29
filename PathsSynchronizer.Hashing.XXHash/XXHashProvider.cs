@@ -6,9 +6,14 @@ namespace PathsSynchronizer.Hashing.XXHash
 {
     public class XXHashProvider : IHashProvider
     {
-        public ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, int bufferSize, CancellationToken cancellationToken = default)
+        public ValueTask<FileHash> HashFileAsync(string path, long length, MemoryPool<byte> pool, int bufferSize, CancellationToken cancellationToken = default)
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
+
+            if (length == 0)
+            {
+                return new ValueTask<FileHash>(new FileHash(path, new DataHash(XxHash128.Hash(ReadOnlySpan<byte>.Empty))));
+            }
 
             XxHash128 hasher = new();
             using SafeFileHandle handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
@@ -17,7 +22,7 @@ namespace PathsSynchronizer.Hashing.XXHash
 
             long offset = 0;
             int read;
-            while ((read = RandomAccess.Read(handle, buffer, offset)) > 0)
+            while (offset < length && (read = RandomAccess.Read(handle, buffer, offset)) > 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 hasher.Append(buffer.Slice(0, read));

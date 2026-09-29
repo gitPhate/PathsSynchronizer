@@ -8,7 +8,7 @@ namespace PathsSynchronizer.MurmurHash
     {
         private const uint _seed = 420;
 
-        public ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, int bufferSize, CancellationToken cancellationToken = default)
+        public ValueTask<FileHash> HashFileAsync(string path, long length, MemoryPool<byte> pool, int bufferSize, CancellationToken cancellationToken = default)
         {
             ReadOnlySpan<byte> inputSpan = File.ReadAllBytes(path).AsSpan();
             uint hash = MurmurHash3.Hash32(ref inputSpan, _seed);

@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using PathsSynchronizer.Hashing;
 using PathsSynchronizer.Hashing.XXHash;
 using PathsSyncronizer.Test.Support;
@@ -15,7 +15,7 @@ namespace PathsSyncronizer.Test
         public void Dispose() => _dir.Dispose();
 
         private async Task<FileHash> HashAsync(string path, int bufferSize = 64) =>
-            await _provider.HashFileAsync(path, _pool, bufferSize);
+            await _provider.HashFileAsync(path, new FileInfo(path).Length, _pool, bufferSize);
 
         [Fact]
         public async Task Identical_content_at_different_paths_gives_same_hash()
@@ -89,7 +89,7 @@ namespace PathsSyncronizer.Test
             using CancellationTokenSource cts = new();
             cts.Cancel();
 
-            Func<Task> act = async () => await _provider.HashFileAsync(path, _pool, bufferSize: 1, cts.Token);
+            Func<Task> act = async () => await _provider.HashFileAsync(path, 10, _pool, bufferSize: 1, cts.Token);
 
             await act.Should().ThrowAsync<OperationCanceledException>();
         }
