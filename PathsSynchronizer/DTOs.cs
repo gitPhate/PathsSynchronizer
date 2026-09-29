@@ -9,7 +9,7 @@ namespace PathsSynchronizer
 
     public record ServiceOptions(int SampleCount, int SampleBlockSize, long FullHashThreshold, int ProducerChannelCapacity, int WorkerCount, int IOConcurrency, int ReadBufferSize)
     {
-        public static ServiceOptions SSD => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 4096, Environment.ProcessorCount, 32, 256 * 1024);
+        public static ServiceOptions SSD => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 16384, Environment.ProcessorCount, 32, 256 * 1024);
         public static ServiceOptions ExternalHDD => new(16, 1 * 1024 * 1024, 100L * 1024 * 1024, 4096, Environment.ProcessorCount, 16, 1 * 1024 * 1024);
     }
 
