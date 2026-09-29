@@ -146,51 +146,41 @@ namespace PathsSynchronizer
                 }
                 else
                 {
-                    // Large file: compute sampled hashes
+                    // Large file: compute sampled hashes, reading samples in ascending offset order
                     DataHash[] sampleHashes = new DataHash[options.SampleCount];
-                    using FileStream fs = new(task.Path, FileMode.Open, FileAccess.Read, FileShare.Read, options.SampleBlockSize, useAsync: true);
-                    SafeFileHandle handle = fs.SafeFileHandle;
+                    using SafeFileHandle handle = File.OpenHandle(task.Path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous | FileOptions.RandomAccess);
+                    using IMemoryOwner<byte> buf = bufferPool.Rent(options.SampleBlockSize);
 
-                    var sampleTasks = Enumerable.Range(0, options.SampleCount).Select(async i =>
+                    for (int i = 0; i < options.SampleCount; i++)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
                         long offset = ComputeOffset(i, options.SampleCount, task.Length);
-                        IMemoryOwner<byte> buf = bufferPool.Rent(options.SampleBlockSize);
+                        Memory<byte> buffer = buf.Memory.Slice(0, options.SampleBlockSize);
+
+                        await ioSemaphore
+                            .WaitAsync(cancellationToken)
+                            .ConfigureAwait(false);
+
                         try
                         {
-                            await ioSemaphore
-                                .WaitAsync(cancellationToken)
-                                .ConfigureAwait(false);
+                            int read = await RandomAccess.ReadAsync(handle, buffer, offset, cancellationToken).ConfigureAwait(false);
 
-                            try
+                            if (read < options.SampleBlockSize)
                             {
-                                Memory<byte> buffer = buf.Memory;
-                                int read = await RandomAccess.ReadAsync(handle, buf.Memory, offset, cancellationToken).ConfigureAwait(false);
-
-                                if (read < options.SampleBlockSize)
-                                {
-                                    buffer = buf.Memory.Slice(0, read);
-                                }
-
-                                sampleHashes[i] =
-                                    await hashProvider
-                                        .HashMemoryAsync(buffer, cancellationToken)
-                                        .ConfigureAwait(false);
-                            }
-                            finally
-                            {
-                                ioSemaphore.Release();
+                                buffer = buffer.Slice(0, read);
                             }
                         }
                         finally
                         {
-                            buf.Dispose();
+                            ioSemaphore.Release();
                         }
-                    })
-                    .ToArray();
 
-                    await Task.WhenAll(sampleTasks).ConfigureAwait(false);
+                        sampleHashes[i] =
+                            await hashProvider
+                                .HashMemoryAsync(buffer, cancellationToken)
+                                .ConfigureAwait(false);
+                    }
 
                     fileHash = new FileHash(task.Path, sampleHashes);
                 }
