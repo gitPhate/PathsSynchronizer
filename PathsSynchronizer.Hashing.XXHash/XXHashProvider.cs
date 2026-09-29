@@ -1,28 +1,30 @@
 ﻿using System.Buffers;
 using System.IO.Hashing;
+using Microsoft.Win32.SafeHandles;
 
 namespace PathsSynchronizer.Hashing.XXHash
 {
     public class XXHashProvider : IHashProvider
     {
-        public async ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, CancellationToken cancellationToken = default)
+        private const int BufferSize = 81920;
+
+        public ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, CancellationToken cancellationToken = default)
         {
             XxHash128 hasher = new();
-            using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            using IMemoryOwner<byte> rentedBuffer = pool.Rent(81920);
+            using SafeFileHandle handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
+            using IMemoryOwner<byte> rentedBuffer = pool.Rent(BufferSize);
+            Span<byte> buffer = rentedBuffer.Memory.Span;
 
-            while (true)
+            long offset = 0;
+            int read;
+            while ((read = RandomAccess.Read(handle, buffer, offset)) > 0)
             {
-                int read = await fs.ReadAsync(rentedBuffer.Memory, cancellationToken).ConfigureAwait(false);
-                if (read == 0)
-                {
-                    break;
-                }
-
-                hasher.Append(rentedBuffer.Memory.Span.Slice(0, read));
+                cancellationToken.ThrowIfCancellationRequested();
+                hasher.Append(buffer.Slice(0, read));
+                offset += read;
             }
 
-            return new(path, new DataHash(hasher.GetCurrentHash())); // 16 bytes (128 bits)
+            return new ValueTask<FileHash>(new FileHash(path, new DataHash(hasher.GetCurrentHash()))); // 16 bytes (128 bits)
         }
 
         public ValueTask<DataHash> HashMemoryAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
