@@ -136,7 +136,7 @@ namespace PathsSynchronizer
                     {
                         fileHash =
                             await hashProvider
-                                .HashFileAsync(task.Path, bufferPool, cancellationToken)
+                                .HashFileAsync(task.Path, bufferPool, options.ReadBufferSize, cancellationToken)
                                 .ConfigureAwait(false);
                     }
                     finally

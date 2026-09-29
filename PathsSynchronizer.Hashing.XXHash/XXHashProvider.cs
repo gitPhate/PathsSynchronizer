@@ -6,14 +6,14 @@ namespace PathsSynchronizer.Hashing.XXHash
 {
     public class XXHashProvider : IHashProvider
     {
-        private const int BufferSize = 81920;
-
-        public ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, CancellationToken cancellationToken = default)
+        public ValueTask<FileHash> HashFileAsync(string path, MemoryPool<byte> pool, int bufferSize, CancellationToken cancellationToken = default)
         {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
+
             XxHash128 hasher = new();
             using SafeFileHandle handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
-            using IMemoryOwner<byte> rentedBuffer = pool.Rent(BufferSize);
-            Span<byte> buffer = rentedBuffer.Memory.Span;
+            using IMemoryOwner<byte> rentedBuffer = pool.Rent(bufferSize);
+            Span<byte> buffer = rentedBuffer.Memory.Span.Slice(0, bufferSize);
 
             long offset = 0;
             int read;
