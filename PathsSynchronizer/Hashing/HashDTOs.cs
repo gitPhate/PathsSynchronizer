@@ -5,14 +5,14 @@ using System.Text.Json.Serialization;
 namespace PathsSynchronizer.Hashing
 {
     [method: JsonConstructor]
-    public readonly struct DataHash(byte[] bytes)
+    public readonly struct DataHash(byte[] bytes) : IEquatable<DataHash>
     {
         public byte[] Bytes { get; } = bytes;
 
         [JsonIgnore]
         public string Hash => Convert.ToHexString(Bytes);
 
-        public bool Equals(DataHash other) => (Bytes ?? Array.Empty<byte>()).SequenceEqual(other.Bytes ?? Array.Empty<byte>());
+        public bool Equals(DataHash other) => (Bytes ?? []).AsSpan().SequenceEqual(other.Bytes ?? []);
 
         public override bool Equals(object? obj) => obj is DataHash xx && Equals(xx);
 
