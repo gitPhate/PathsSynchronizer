@@ -21,7 +21,14 @@ Progress<HashProgress> progress = new(p =>
     progressChannel.Writer.TryWrite(p);
 });
 
-int startLine = Console.CursorTop;
+// Reserve the render area up front so a cursor at the bottom of the buffer scrolls now, not on every redraw
+const int RenderLines = 7;
+for (int i = 0; i < RenderLines; i++)
+{
+    Console.WriteLine();
+}
+
+int startLine = Math.Max(0, Console.CursorTop - RenderLines);
 
 Stopwatch stopwatch = Stopwatch.StartNew();
 
