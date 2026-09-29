@@ -61,24 +61,40 @@ namespace PathsSynchronizer
 
             using SemaphoreSlim ioSemaphore = new(options.IOConcurrency);
 
+            // Cancelled when a worker fails, so the producer does not block forever on a channel nobody drains
+            using CancellationTokenSource abortCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            CancellationToken scanToken = abortCts.Token;
+
+            async Task runWorkerAsync()
+            {
+                try
+                {
+                    await ConsumerWorkerAsync
+                    (
+                        channel.Reader,
+                        ioSemaphore,
+                        index,
+                        x =>
+                        {
+                            Interlocked.Increment(ref filesHashed);
+                            Interlocked.Add(ref bytesHashed, x);
+                            reportProgress();
+                        },
+                        scanToken
+                    )
+                    .ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    abortCts.Cancel();
+                    throw;
+                }
+            }
+
             Task[] workers =
                 Enumerable
                     .Range(0, options.WorkerCount)
-                    .Select(_ =>
-                        ConsumerWorkerAsync
-                        (
-                            channel.Reader,
-                            ioSemaphore,
-                            index,
-                            x =>
-                            {
-                                Interlocked.Increment(ref filesHashed);
-                                Interlocked.Add(ref bytesHashed, x);
-                                reportProgress();
-                            },
-                            cancellationToken
-                        )
-                    )
+                    .Select(_ => runWorkerAsync())
                     .ToArray();
 
             Exception? producerException = null;
@@ -93,7 +109,7 @@ namespace PathsSynchronizer
                         Interlocked.Increment(ref filesRead);
                         reportProgress();
                     },
-                    cancellationToken
+                    scanToken
                 )
                 .ConfigureAwait(false);
             }
@@ -106,7 +122,21 @@ namespace PathsSynchronizer
                 channel.Writer.TryComplete(producerException);
             }
 
-            await Task.WhenAll(workers).ConfigureAwait(false);
+            try
+            {
+                await Task.WhenAll(workers).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Surface the worker's own failure rather than the cancellation it triggered in its siblings
+                Task? faulted = workers.FirstOrDefault(t => t.IsFaulted);
+                if (faulted is not null)
+                {
+                    await faulted.ConfigureAwait(false);
+                }
+
+                throw;
+            }
 
             reportProgress(force: true);
 
