@@ -5,6 +5,7 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Enumeration;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -270,30 +271,55 @@ namespace PathsSynchronizer
 
         private static async Task ProducerAsync(string rootPath, ChannelWriter<FileTask> writer, Action<long>? onFileDiscovered, CancellationToken cancellationToken)
         {
-            await TraverseAsync(new DirectoryInfo(rootPath)).ConfigureAwait(false);
+            EnumerationOptions enumerationOptions = new()
+            {
+                RecurseSubdirectories = true,
+                IgnoreInaccessible = true,
+                AttributesToSkip = 0
+            };
 
-            async Task TraverseAsync(DirectoryInfo directory)
+            FileSystemEnumerable<FileTask> files = new(rootPath, static (ref FileSystemEntry e) => new FileTask(e.ToFullPath(), e.Length), enumerationOptions)
+            {
+                ShouldIncludePredicate = static (ref FileSystemEntry e) => !e.IsDirectory
+            };
+
+            foreach (FileTask task in files)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // Files in THIS directory
-                foreach (var file in directory.EnumerateFiles()
-                    .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
+                onFileDiscovered?.Invoke(task.Length);
 
-                    onFileDiscovered?.Invoke(file.Length);
-
-                    await writer.WriteAsync(new(file.FullName, file.Length), cancellationToken).ConfigureAwait(false);
-                }
-
-                // Subdirectories
-                foreach (var subDir in directory.EnumerateDirectories()
-                    .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
-                {
-                    await TraverseAsync(subDir).ConfigureAwait(false);
-                }
+                await writer.WriteAsync(task, cancellationToken).ConfigureAwait(false);
             }
         }
+
+        // Previous producer: name-ordered, directory by directory. Kept for comparison (ordered reads may matter on external HDDs).
+        // private static async Task ProducerAsync(string rootPath, ChannelWriter<FileTask> writer, Action<long>? onFileDiscovered, CancellationToken cancellationToken)
+        // {
+            // await TraverseAsync(new DirectoryInfo(rootPath)).ConfigureAwait(false);
+
+            // async Task TraverseAsync(DirectoryInfo directory)
+            // {
+                // cancellationToken.ThrowIfCancellationRequested();
+
+                // // Files in THIS directory
+                // foreach (var file in directory.EnumerateFiles()
+                    // .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+                // {
+                    // cancellationToken.ThrowIfCancellationRequested();
+
+                    // onFileDiscovered?.Invoke(file.Length);
+
+                    // await writer.WriteAsync(new(file.FullName, file.Length), cancellationToken).ConfigureAwait(false);
+                // }
+
+                // // Subdirectories
+                // foreach (var subDir in directory.EnumerateDirectories()
+                    // .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+                // {
+                    // await TraverseAsync(subDir).ConfigureAwait(false);
+                // }
+            // }
+        // }
     }
 }
