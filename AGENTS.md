@@ -6,7 +6,7 @@
 PathsSynchronizer.sln
 ├── PathsSynchronizer/               # Core library (namespaces: PathsSynchronizer)
 ├── PathsSynchronizer.Hashing.XXHash/# XXHash IHashProvider implementation
-├── PathsSynchronizer.MurmurHash/    # MurmurHash IHashProvider (incomplete – see below)
+├── PathsSynchronizer.Hashing.MurmurHash/    # MurmurHash3 x64_128 IHashProvider (in-house streaming impl)
 ├── PathsSyncronizer.Console/        # CLI entrypoint  ← note the typo: Syncronizer
 └── PathsSyncronizer.Test/           # xUnit tests     ← same typo
 ```
@@ -52,10 +52,6 @@ No `global.json` — SDK version is whatever is installed locally.
 | `Hash` | hex-string view of `DataHash` |
 
 `JsonConstructor` attributes are present so JSON round-trips work with records — don't remove them.
-
-## Known issues / incomplete code
-
-- `MurmurHashProvider.ComputeHash` computes a value but returns `new DataHash([12])` — it is a stub/buggy implementation. Do not rely on it for correctness.
 
 ## Test quirks
 

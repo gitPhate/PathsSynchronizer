@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer", "PathsS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer.Hashing.XXHash", "PathsSynchronizer.Hashing.XXHash\PathsSynchronizer.Hashing.XXHash.csproj", "{39F10BF0-435E-4073-94CD-C291C18FF07F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer.MurmurHash", "PathsSynchronizer.MurmurHash\PathsSynchronizer.MurmurHash.csproj", "{043D5B35-8F42-947C-75D3-5DDED7831A52}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSynchronizer.Hashing.MurmurHash", "PathsSynchronizer.Hashing.MurmurHash\PathsSynchronizer.Hashing.MurmurHash.csproj", "{043D5B35-8F42-947C-75D3-5DDED7831A52}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathsSyncronizer.Console", "PathsSyncronizer.Console\PathsSyncronizer.Console.csproj", "{1A7A3901-83F6-FE66-DD0B-7B59154FCEB8}"
 EndProject
