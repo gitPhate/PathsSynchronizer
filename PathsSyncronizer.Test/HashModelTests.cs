@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using PathsSynchronizer;
 using PathsSynchronizer.Hashing;
 using PathsSyncronizer.Test.Support;
@@ -135,6 +135,7 @@ namespace PathsSyncronizer.Test
             DirectoryHash b = new("root", [File("b", 2), File("a", 1)]);
 
             a.Should().Be(b);
+            a.GetHashCode().Should().Be(b.GetHashCode());
         }
 
         [Fact]

@@ -22,24 +22,20 @@ namespace PathsSynchronizer
         public override bool Equals(object? obj) =>
             obj is DirectoryHash other
                 && string.Equals(Path ?? string.Empty, other.Path ?? string.Empty, StringComparison.Ordinal)
-                && Files.OrderBy(x => x.FilePath).SequenceEqual(other.Files.OrderBy(x => x.FilePath));
+                && Files.OrderBy(x => x.FilePath, StringComparer.Ordinal).SequenceEqual(other.Files.OrderBy(x => x.FilePath, StringComparer.Ordinal));
 
         public override int GetHashCode()
         {
             unchecked
             {
-                int hash = (int)2166136261;
-                if (Files.Length != 0)
+                // Order-independent, since Equals ignores file order
+                int filesHash = 0;
+                for (int i = 0; i < Files.Length; i++)
                 {
-                    const int p = 16777619;
-
-                    for (int i = 0; i < Files.Length; i++)
-                    {
-                        hash = (hash ^ Files[i].GetHashCode()) * p;
-                    }
+                    filesHash += Files[i].GetHashCode();
                 }
 
-                return hash ^ (Path ?? string.Empty).GetHashCode();
+                return HashCode.Combine(filesHash, Files.Length, Path ?? string.Empty);
             }
         }
     }
