@@ -21,6 +21,22 @@ namespace PathsSyncronizer.Test
             Hex(MurmurHash3x64.Hash(Encoding.ASCII.GetBytes(input))).Should().Be(expectedHex);
         }
 
+        [Fact]
+        public void Hash_with_seed_matches_reference()
+        {
+            Hex(MurmurHash3x64.Hash(Encoding.ASCII.GetBytes("hello"), 42)).Should().Be("086FAF60C9B3B8C47ABCEFB075B83423");
+        }
+
+        [Fact]
+        public void Reset_restores_seeded_state()
+        {
+            MurmurHash3x64 hasher = new(42);
+            hasher.Append(Pattern.AsSpan(0, 20));
+            hasher.Reset();
+            hasher.Append(Pattern.AsSpan(0, 20));
+            hasher.GetCurrentHash().Should().Equal(MurmurHash3x64.Hash(Pattern.AsSpan(0, 20), 42));
+        }
+
         // Lengths cover every tail branch (0, 1..8, 9..15) with zero, one and several full 16-byte blocks.
         [Theory]
         [InlineData(1, "17BD72899D9027C4DD99B1452A70155C")]

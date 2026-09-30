@@ -1,42 +1,51 @@
 using System.Buffers.Binary;
+using System.IO.Hashing;
 using System.Numerics;
 
 namespace PathsSynchronizer.Hashing.MurmurHash
 {
     /// <summary>
-    /// Incremental MurmurHash3 x64_128 (seed 0). Output is h1 then h2, each little-endian, matching the reference byte order.
+    /// Incremental MurmurHash3 x64_128 (default seed 0). Output is h1 then h2, each little-endian, matching the reference byte order.
     /// </summary>
-    internal sealed class MurmurHash3x64
+    internal sealed class MurmurHash3x64 : NonCryptographicHashAlgorithm
     {
-        private const int BlockSize = 16;
+        private new const int HashLengthInBytes = 16;
+
         private const ulong C1 = 0x87c37b91114253d5UL;
         private const ulong C2 = 0x4cf5ad432745937fUL;
 
-        private readonly byte[] _pending = new byte[BlockSize];
+        private readonly byte[] _pending = new byte[HashLengthInBytes];
         private int _pendingCount;
         private ulong _h1;
         private ulong _h2;
         private ulong _length;
+        private readonly uint _seed;
 
-        public static byte[] Hash(ReadOnlySpan<byte> data)
+        public MurmurHash3x64(uint seed = 0) : base(HashLengthInBytes)
         {
-            MurmurHash3x64 hasher = new();
+            _seed = seed;
+            Reset();
+        }
+
+        public static byte[] Hash(ReadOnlySpan<byte> data, uint seed = 0)
+        {
+            MurmurHash3x64 hasher = new(seed);
             hasher.Append(data);
             return hasher.GetCurrentHash();
         }
 
-        public void Append(ReadOnlySpan<byte> data)
+        public override void Append(ReadOnlySpan<byte> data)
         {
             _length += (ulong)data.Length;
 
             if (_pendingCount > 0)
             {
-                int take = Math.Min(BlockSize - _pendingCount, data.Length);
+                int take = Math.Min(HashLengthInBytes - _pendingCount, data.Length);
                 data.Slice(0, take).CopyTo(_pending.AsSpan(_pendingCount));
                 _pendingCount += take;
                 data = data.Slice(take);
 
-                if (_pendingCount < BlockSize)
+                if (_pendingCount < HashLengthInBytes)
                 {
                     return;
                 }
@@ -45,17 +54,25 @@ namespace PathsSynchronizer.Hashing.MurmurHash
                 _pendingCount = 0;
             }
 
-            while (data.Length >= BlockSize)
+            while (data.Length >= HashLengthInBytes)
             {
                 MixBlock(data);
-                data = data.Slice(BlockSize);
+                data = data.Slice(HashLengthInBytes);
             }
 
             data.CopyTo(_pending);
             _pendingCount = data.Length;
         }
 
-        public byte[] GetCurrentHash()
+        public override void Reset()
+        {
+            _pendingCount = 0;
+            _h1 = _seed;
+            _h2 = _seed;
+            _length = 0;
+        }
+
+        protected override void GetCurrentHashCore(Span<byte> destination)
         {
             ulong h1 = _h1;
             ulong h2 = _h2;
@@ -90,10 +107,8 @@ namespace PathsSynchronizer.Hashing.MurmurHash
             h1 += h2;
             h2 += h1;
 
-            byte[] result = new byte[BlockSize];
-            BinaryPrimitives.WriteUInt64LittleEndian(result, h1);
-            BinaryPrimitives.WriteUInt64LittleEndian(result.AsSpan(8), h2);
-            return result;
+            BinaryPrimitives.WriteUInt64LittleEndian(destination, h1);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(8), h2);
         }
 
         private void MixBlock(ReadOnlySpan<byte> block)
