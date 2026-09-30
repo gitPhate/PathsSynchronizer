@@ -12,7 +12,7 @@ namespace PathsSynchronizer.Hashing.XXHash
 
             if (length == 0)
             {
-                return new ValueTask<FileHash>(new FileHash(path, new DataHash(XxHash128.Hash(ReadOnlySpan<byte>.Empty))));
+                return new ValueTask<FileHash>(new FileHash(path, new DataHash(XxHash128.Hash([]))));
             }
 
             XxHash128 hasher = new();
